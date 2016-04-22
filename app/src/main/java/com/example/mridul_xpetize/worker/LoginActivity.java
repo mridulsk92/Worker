@@ -119,6 +119,7 @@ public class LoginActivity extends AppCompatActivity {
                 pDialog.dismiss();
 
             if (response == 200) {
+                Toast.makeText(LoginActivity.this, "Login Successfull", Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(i);
             } else {
