@@ -32,7 +32,6 @@ public class LoginActivity extends AppCompatActivity {
     private static String TAG_DESIGNATION = "Designation";
     private static String TAG_USERNAME = "UserName";
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,11 +118,11 @@ public class LoginActivity extends AppCompatActivity {
                 pDialog.dismiss();
 
             if (response == 200) {
-                Toast.makeText(LoginActivity.this, "Login Successfull", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this,"Login Successfull",Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(i);
             } else {
-                Toast.makeText(LoginActivity.this, "Please Check Username and Password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this,"Please Check Username and Password",Toast.LENGTH_SHORT).show();
             }
         }
     }
