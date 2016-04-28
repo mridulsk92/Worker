@@ -74,12 +74,13 @@ public class MainActivity extends AppCompatActivity {
         lowPriorityList = new ArrayList<HashMap<String, String>>();
         pref = new PreferencesHelper(MainActivity.this);
 
+        String name = pref.GetPreferences("Name");
         //Add header to navigation drawer
         AccountHeader headerResult = new AccountHeaderBuilder()
                 .withActivity(this)
                 .withHeaderBackground(R.drawable.header)
                 .addProfiles(
-                        new ProfileDrawerItem().withName("Worker1").withEmail("worker1@gmail.com").withIcon(getResources().getDrawable(R.drawable.profile))
+                        new ProfileDrawerItem().withName(name).withEmail(name+"@gmail.com").withIcon(getResources().getDrawable(R.drawable.profile))
                 ).build();
 
         //Drawer
