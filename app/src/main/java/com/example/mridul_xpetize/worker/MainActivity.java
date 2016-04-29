@@ -72,9 +72,10 @@ public class MainActivity extends AppCompatActivity {
         highPriorityList = new ArrayList<HashMap<String, String>>();
         mediumPriorityList = new ArrayList<HashMap<String, String>>();
         lowPriorityList = new ArrayList<HashMap<String, String>>();
-        pref = new PreferencesHelper(MainActivity.this);
 
+        pref = new PreferencesHelper(MainActivity.this);
         String name = pref.GetPreferences("Name");
+
         //Add header to navigation drawer
         AccountHeader headerResult = new AccountHeaderBuilder()
                 .withActivity(this)
