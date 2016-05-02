@@ -170,17 +170,6 @@ public class MainActivity extends AppCompatActivity {
 
         new GetTaskList().execute();
 
-//        TextView priority_text = (TextView)tasks_list.findViewById(R.id.priority);
-//        if(priority_text.equals("High")){
-//            priority_text.setTextColor(Color.RED);
-//        }else if(priority_text.equals("Medium")){
-//            priority_text.setTextColor(Color.YELLOW);
-//        }else if(priority_text.equals("Low")){
-//            priority_text.setTextColor(Color.GREEN);
-//        }else{
-//
-//        }
-
     }
 
     //AsyncTask to get tasks(to be edited)

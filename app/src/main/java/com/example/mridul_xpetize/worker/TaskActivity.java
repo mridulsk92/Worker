@@ -11,12 +11,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 public class TaskActivity extends AppCompatActivity {
 
     ImageView img;
     ImageButton camera;
     String path;
+    TextView desc, loc;
     private static final int CAMERA_REQUEST = 1888;
 
     @Override
@@ -30,10 +32,20 @@ public class TaskActivity extends AppCompatActivity {
         toolbar.setTitle("Worker");
         toolbar.setTitleTextColor(Color.WHITE);
 
+        //get Intent
+        Intent i = getIntent();
+        String desc_st = i.getStringExtra("desc");
+        String loc_st = i.getStringExtra("loc");
+
         //Initialise
+        desc = (TextView)findViewById(R.id.desc);
+        loc = (TextView)findViewById(R.id.location);
         img = (ImageView)findViewById(R.id.imageView);
         camera = (ImageButton)findViewById(R.id.imageButton_camera);
 
+        //Set values to textviews
+        desc.setText(desc_st);
+        loc.setText(loc_st);
 
         //onClick of Camera
         camera.setOnClickListener(new View.OnClickListener() {
