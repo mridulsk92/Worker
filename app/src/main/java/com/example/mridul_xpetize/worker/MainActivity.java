@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<HashMap<String, String>> mediumPriorityList;
     ArrayList<HashMap<String, String>> lowPriorityList;
 
+    String start_og, end_og;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 .withActivity(this)
                 .withHeaderBackground(R.drawable.header)
                 .addProfiles(
-                        new ProfileDrawerItem().withName(name).withEmail(name+"@gmail.com").withIcon(getResources().getDrawable(R.drawable.profile))
+                        new ProfileDrawerItem().withName(name).withEmail(name + "@gmail.com").withIcon(getResources().getDrawable(R.drawable.profile))
                 ).build();
 
         //Drawer
@@ -159,11 +161,17 @@ public class MainActivity extends AppCompatActivity {
                 //Get TextView values and assign to String
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
                 String loc = ((TextView) view.findViewById(R.id.location)).getText().toString();
+                String st_date = ((TextView) view.findViewById(R.id.start)).getText().toString();
+                String end_date = ((TextView) view.findViewById(R.id.end)).getText().toString();
+                String taskId = ((TextView) view.findViewById(R.id.task_id)).getText().toString();
 
                 //Pass the Strings to the next Activity
                 Intent i = new Intent(MainActivity.this, TaskActivity.class);
                 i.putExtra("desc", desc);
                 i.putExtra("loc", loc);
+                i.putExtra("start", start_og);
+                i.putExtra("end", end_og);
+                i.putExtra("task_id", taskId);
                 startActivity(i);
             }
         });
@@ -214,8 +222,8 @@ public class MainActivity extends AppCompatActivity {
 
                         String id = c.getString(TAG_ID);
                         String desc = c.getString(TAG_DESCRIPTION);
-                        String st_date = c.getString(TAG_STARTDATE);
-                        String end_date = c.getString(TAG_ENDDATE);
+                        start_og = c.getString(TAG_STARTDATE);
+                        end_og = c.getString(TAG_ENDDATE);
                         int priority = c.getInt(TAG_PRIORITY);
                         String priority_string = "High";
 
@@ -227,8 +235,8 @@ public class MainActivity extends AppCompatActivity {
 
                             tempHigh.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempHigh.put(TAG_ID, id);
-                            tempHigh.put(TAG_STARTDATE, "Start Date : " + st_date);
-                            tempHigh.put(TAG_ENDDATE, "End Date : " + end_date);
+                            tempHigh.put(TAG_STARTDATE, "Start Date : " + start_og);
+                            tempHigh.put(TAG_ENDDATE, "End Date : " + end_og);
                             tempHigh.put(TAG_PRIORITY, "Priority : " + priority_string);
                             highPriorityList.add(tempHigh);
 
@@ -240,8 +248,8 @@ public class MainActivity extends AppCompatActivity {
 
                             tempMedium.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempMedium.put(TAG_ID, id);
-                            tempMedium.put(TAG_STARTDATE, "Start Date : " + st_date);
-                            tempMedium.put(TAG_ENDDATE, "End Date : " + end_date);
+                            tempMedium.put(TAG_STARTDATE, "Start Date : " + start_og);
+                            tempMedium.put(TAG_ENDDATE, "End Date : " + end_og);
                             tempMedium.put(TAG_PRIORITY, "Priority : " + priority_string);
                             mediumPriorityList.add(tempMedium);
 
@@ -253,8 +261,8 @@ public class MainActivity extends AppCompatActivity {
 
                             tempLow.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempLow.put(TAG_ID, id);
-                            tempLow.put(TAG_STARTDATE, "Start Date : " + st_date);
-                            tempLow.put(TAG_ENDDATE, "End Date : " + end_date);
+                            tempLow.put(TAG_STARTDATE, "Start Date : " + start_og);
+                            tempLow.put(TAG_ENDDATE, "End Date : " + end_og);
                             tempLow.put(TAG_PRIORITY, "Priority : " + priority_string);
                             lowPriorityList.add(tempLow);
 
@@ -268,8 +276,8 @@ public class MainActivity extends AppCompatActivity {
                         // adding each child node to HashMap key => value
                         contact.put(TAG_DESCRIPTION, "Description : " + desc);
                         contact.put(TAG_ID, id);
-                        contact.put(TAG_STARTDATE, "Start Date : " + st_date);
-                        contact.put(TAG_ENDDATE, "End Date : " + end_date);
+                        contact.put(TAG_STARTDATE, "Start Date : " + start_og);
+                        contact.put(TAG_ENDDATE, "End Date : " + end_og);
                         contact.put(TAG_PRIORITY, "Priority : " + priority_string);
                         dataList.add(contact);
 

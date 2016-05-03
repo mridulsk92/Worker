@@ -1,14 +1,18 @@
 package com.example.mridul_xpetize.worker;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -20,6 +24,10 @@ public class TaskActivity extends AppCompatActivity {
     String path;
     TextView desc, loc;
     private static final int CAMERA_REQUEST = 1888;
+    String desc_st, loc_st, start_st, end_st, taskid_st;
+    Button submit;
+    ProgressDialog pDialog;
+    PreferencesHelper pref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,18 +42,32 @@ public class TaskActivity extends AppCompatActivity {
 
         //get Intent
         Intent i = getIntent();
-        String desc_st = i.getStringExtra("desc");
-        String loc_st = i.getStringExtra("loc");
+        desc_st = i.getStringExtra("desc");
+        loc_st = i.getStringExtra("loc");
+        start_st = i.getStringExtra("start");
+        end_st = i.getStringExtra("end");
+        taskid_st = i.getStringExtra("task_id");
 
         //Initialise
-        desc = (TextView)findViewById(R.id.desc);
-        loc = (TextView)findViewById(R.id.location);
-        img = (ImageView)findViewById(R.id.imageView);
-        camera = (ImageButton)findViewById(R.id.imageButton_camera);
+        submit = (Button) findViewById(R.id.button_submit);
+        desc = (TextView) findViewById(R.id.desc);
+        loc = (TextView) findViewById(R.id.location);
+        img = (ImageView) findViewById(R.id.imageView);
+        camera = (ImageButton) findViewById(R.id.imageButton_camera);
+        pref = new PreferencesHelper(TaskActivity.this);
 
         //Set values to textviews
         desc.setText(desc_st);
         loc.setText(loc_st);
+
+        //onClick of submit buton
+        submit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                new PostTask().execute();
+            }
+        });
 
         //onClick of Camera
         camera.setOnClickListener(new View.OnClickListener() {
@@ -65,7 +87,7 @@ public class TaskActivity extends AppCompatActivity {
 
                     Intent i = new Intent(TaskActivity.this, FullImageActivity.class);
                     i.putExtra("path", path);
-                    i.putExtra("type","path");
+                    i.putExtra("type", "path");
                     startActivity(i);
                 }
             }
@@ -91,4 +113,50 @@ public class TaskActivity extends AppCompatActivity {
 
         return cursor.getString(column_index_data);
     }
+
+    private class PostTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
+
+//            String url = "http://vikray.in/MyService.asmx/GetEmployessJSONNewN";
+            String user_id = pref.GetPreferences("Designation");
+            String username = pref.GetPreferences("Name");
+            int status = 0;
+            String stDate = start_st.replaceAll("\\s+", "");
+            String endDate = end_st.replaceAll("\\s+", "");
+            Log.d("Replaced", stDate);
+            String url = "http://vikray.in/MyService.asmx/ExcProcedure?Para=Proc_PostTaskMst&Para=" + taskid_st + "&Para=" + user_id + "&Para=" + status + "&Para=" + username;
+            // Making a request to url and getting response
+
+            Log.d("Test", url);
+
+            String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+            Log.d("Response: ", "> " + jsonStr);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+        }
+    }
+
 }
