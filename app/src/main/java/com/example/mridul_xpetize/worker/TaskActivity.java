@@ -28,6 +28,7 @@ public class TaskActivity extends AppCompatActivity {
     Button submit;
     ProgressDialog pDialog;
     PreferencesHelper pref;
+    int pos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,7 @@ public class TaskActivity extends AppCompatActivity {
         start_st = i.getStringExtra("start");
         end_st = i.getStringExtra("end");
         taskid_st = i.getStringExtra("task_id");
+        pos = i.getIntExtra("pos",-1);
 
         //Initialise
         submit = (Button) findViewById(R.id.button_submit);
@@ -156,6 +158,9 @@ public class TaskActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
+            Intent i = new Intent(TaskActivity.this, MainActivity.class);
+            i.putExtra("pos",pos);
+            startActivity(i);
         }
     }
 

@@ -2,6 +2,7 @@
 <android.support.v7.widget.CardView
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
+    android:id="@+id/card_task"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     card_view:contentPadding="16dp"
     card_view:cardElevation="2dp"
@@ -14,6 +15,13 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/status"
+            android:padding="5dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Status" />
 
         <TextView
             android:id="@+id/desc"

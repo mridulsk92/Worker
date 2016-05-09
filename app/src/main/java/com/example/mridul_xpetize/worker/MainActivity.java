@@ -1,15 +1,24 @@
 package com.example.mridul_xpetize.worker;
 
 import android.app.ProgressDialog;
+import android.content.ClipData;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -34,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,21 +52,24 @@ public class MainActivity extends AppCompatActivity {
     ProgressDialog pDialog;
     PreferencesHelper pref;
     private Drawer result = null;
-
+    LayoutInflater inflater;
     JSONArray tasks;
 
     private static String TAG_DESCRIPTION = "Description";
+    private static String TAG_STATUS = "Status";
     private static String TAG_ID = "Id";
     private static String TAG_STARTDATE = "TaskStartDate";
     private static String TAG_ENDDATE = "TaskEndDate";
     private static String TAG_PRIORITY = "TaskPriority";
 
-    ArrayList<HashMap<String, String>> dataList;
+    ArrayList<HashMap<String, Object>> dataList;
     ArrayList<HashMap<String, String>> highPriorityList;
     ArrayList<HashMap<String, String>> mediumPriorityList;
     ArrayList<HashMap<String, String>> lowPriorityList;
 
     String start_og, end_og;
+    int hashPosition;
+    SwipeRefreshLayout swipe;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,11 +84,22 @@ public class MainActivity extends AppCompatActivity {
 
         //Initialize
         tasks_list = (ListView) findViewById(R.id.listView_taskList);
-        dataList = new ArrayList<HashMap<String, String>>();
+        dataList = new ArrayList<HashMap<String, Object>>();
         highPriorityList = new ArrayList<HashMap<String, String>>();
         mediumPriorityList = new ArrayList<HashMap<String, String>>();
         lowPriorityList = new ArrayList<HashMap<String, String>>();
+        swipe = new SwipeRefreshLayout(MainActivity.this);
 
+        //on swipe
+//        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+//            @Override
+//            public void onRefresh() {
+//
+//                refreshContent();
+//            }
+//        });
+
+        //Get preference values
         pref = new PreferencesHelper(MainActivity.this);
         String name = pref.GetPreferences("Name");
 
@@ -158,6 +183,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                pref.SavePreferences("row id", String.valueOf(id));
                 //Get TextView values and assign to String
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
                 String loc = ((TextView) view.findViewById(R.id.location)).getText().toString();
@@ -172,12 +198,84 @@ public class MainActivity extends AppCompatActivity {
                 i.putExtra("start", start_og);
                 i.putExtra("end", end_og);
                 i.putExtra("task_id", taskId);
+                i.putExtra("pos", position);
                 startActivity(i);
             }
         });
 
         new GetTaskList().execute();
 
+    }
+
+
+    //Define Custom Adapter for Message Cards
+    private class CustomAdapter extends ArrayAdapter<HashMap<String, Object>> {
+
+        public CustomAdapter(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
+
+            //let android do the initializing :)
+            super(context, textViewResourceId, Strings);
+        }
+
+        //class for caching the views in a row
+        private class ViewHolder {
+
+            TextView status, desc, priority, startdate, enddate, loc, id;
+            CardView cv;
+        }
+
+        //Initialise
+        ViewHolder viewHolder;
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            if (convertView == null) {
+
+                //inflate the custom layout
+                convertView = inflater.from(parent.getContext()).inflate(R.layout.task_list, parent, false);
+                viewHolder = new ViewHolder();
+
+                //cache the views
+                viewHolder.status = (TextView) convertView.findViewById(R.id.status);
+                viewHolder.desc = (TextView) convertView.findViewById(R.id.desc);
+                viewHolder.priority = (TextView) convertView.findViewById(R.id.priority);
+                viewHolder.startdate = (TextView) convertView.findViewById(R.id.start);
+                viewHolder.enddate = (TextView) convertView.findViewById(R.id.end);
+                viewHolder.loc = (TextView) convertView.findViewById(R.id.location);
+                viewHolder.id = (TextView) convertView.findViewById(R.id.task_id);
+                viewHolder.cv = (CardView) convertView.findViewById(R.id.card_task);
+
+                //link the cached views to the convertview
+                convertView.setTag(viewHolder);
+            } else
+                viewHolder = (ViewHolder) convertView.getTag();
+
+            //set the data to be displayed
+            viewHolder.status.setText(dataList.get(position).get("Status").toString());
+            viewHolder.desc.setText(dataList.get(position).get("Description").toString());
+            viewHolder.priority.setText(dataList.get(position).get("TaskPriority").toString());
+            viewHolder.startdate.setText(dataList.get(position).get("TaskStartDate").toString());
+            viewHolder.enddate.setText(dataList.get(position).get("TaskEndDate").toString());
+//            viewHolder.loc.setText(dataList.get(position).get("ago").toString());
+            viewHolder.id.setText(dataList.get(position).get("Id").toString());
+//            viewHolder.cv.setCardBackgroundColor(Color.parseColor(dataList.get(position).get("color").toString()));
+            return convertView;
+        }
+    }
+
+
+
+
+    private void refreshContent() {
+
+//        new GetTaskList().execute();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                swipe.setRefreshing(false);
+            }
+        }, 5000);
     }
 
     //AsyncTask to get tasks(to be edited)
@@ -233,6 +331,7 @@ public class MainActivity extends AppCompatActivity {
 
                             HashMap<String, String> tempHigh = new HashMap<String, String>();
 
+                            tempHigh.put(TAG_STATUS, "New Task");
                             tempHigh.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempHigh.put(TAG_ID, id);
                             tempHigh.put(TAG_STARTDATE, "Start Date : " + start_og);
@@ -246,6 +345,7 @@ public class MainActivity extends AppCompatActivity {
 
                             HashMap<String, String> tempMedium = new HashMap<String, String>();
 
+                            tempMedium.put(TAG_STATUS, "New Task");
                             tempMedium.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempMedium.put(TAG_ID, id);
                             tempMedium.put(TAG_STARTDATE, "Start Date : " + start_og);
@@ -259,6 +359,7 @@ public class MainActivity extends AppCompatActivity {
 
                             HashMap<String, String> tempLow = new HashMap<String, String>();
 
+                            tempLow.put(TAG_STATUS, "New Task");
                             tempLow.put(TAG_DESCRIPTION, "Description : " + desc);
                             tempLow.put(TAG_ID, id);
                             tempLow.put(TAG_STARTDATE, "Start Date : " + start_og);
@@ -268,12 +369,24 @@ public class MainActivity extends AppCompatActivity {
 
                         } else {
                             priority_string = "High";
+
+                            HashMap<String, String> tempHigh = new HashMap<String, String>();
+
+                            tempHigh.put(TAG_STATUS, "New Task");
+                            tempHigh.put(TAG_DESCRIPTION, "Description : " + desc);
+                            tempHigh.put(TAG_ID, id);
+                            tempHigh.put(TAG_STARTDATE, "Start Date : " + start_og);
+                            tempHigh.put(TAG_ENDDATE, "End Date : " + end_og);
+                            tempHigh.put(TAG_PRIORITY, "Priority : " + priority_string);
+                            highPriorityList.add(tempHigh);
+
                         }
 
                         // tmp hashmap for single contact
-                        HashMap<String, String> contact = new HashMap<String, String>();
+                        HashMap<String, Object> contact = new HashMap<String, Object>();
 
                         // adding each child node to HashMap key => value
+                        contact.put(TAG_STATUS, "New Task");
                         contact.put(TAG_DESCRIPTION, "Description : " + desc);
                         contact.put(TAG_ID, id);
                         contact.put(TAG_STARTDATE, "Start Date : " + start_og);
@@ -299,12 +412,9 @@ public class MainActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
-            ListAdapter adapter = new SimpleAdapter(
-                    MainActivity.this, dataList,
-                    R.layout.task_list, new String[]{TAG_DESCRIPTION, TAG_ID, TAG_STARTDATE, TAG_ENDDATE, TAG_PRIORITY},
-                    new int[]{R.id.desc, R.id.task_id, R.id.start, R.id.end, R.id.priority});
+            CustomAdapter cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
+            tasks_list.setAdapter(cardAdapter);
 
-            tasks_list.setAdapter(adapter);
         }
     }
 }
