@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Worker</string>
+    <string name="url_string">http://10.0.2.2/MobApp/</string>
+    <string name="url">http://vikray.in/</string>
 </resources>

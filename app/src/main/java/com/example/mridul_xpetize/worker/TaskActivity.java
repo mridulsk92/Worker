@@ -1,6 +1,7 @@
 package com.example.mridul_xpetize.worker;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -9,13 +10,26 @@ import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class TaskActivity extends AppCompatActivity {
 
@@ -28,7 +42,14 @@ public class TaskActivity extends AppCompatActivity {
     Button submit;
     ProgressDialog pDialog;
     PreferencesHelper pref;
+    private static String TAG_DESCRIPTION = "SubTask";
+    private static String TAG_ID = "Id";
     int pos;
+    ListView subtask_list;
+    JSONArray tasks;
+    ArrayList<HashMap<String, Object>> dataList;
+    LayoutInflater inflater;
+    CustomAdapter cardAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,9 +69,11 @@ public class TaskActivity extends AppCompatActivity {
         start_st = i.getStringExtra("start");
         end_st = i.getStringExtra("end");
         taskid_st = i.getStringExtra("task_id");
-        pos = i.getIntExtra("pos",-1);
+        pos = i.getIntExtra("pos", -1);
 
         //Initialise
+        dataList = new ArrayList<HashMap<String, Object>>();
+        subtask_list = (ListView) findViewById(R.id.listView_sub);
         submit = (Button) findViewById(R.id.button_submit);
         desc = (TextView) findViewById(R.id.desc);
         loc = (TextView) findViewById(R.id.location);
@@ -58,11 +81,7 @@ public class TaskActivity extends AppCompatActivity {
         camera = (ImageButton) findViewById(R.id.imageButton_camera);
         pref = new PreferencesHelper(TaskActivity.this);
 
-        //Set values to textviews
-        desc.setText(desc_st);
-        loc.setText(loc_st);
-
-        //onClick of submit buton
+        //onClick of submit button
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -81,6 +100,7 @@ public class TaskActivity extends AppCompatActivity {
             }
         });
 
+        //Image onClick
         img.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,6 +114,122 @@ public class TaskActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //Load SubTask
+        new LoadSubTask().execute();
+    }
+
+    private class LoadSubTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            ServiceHandler sh = new ServiceHandler();
+
+            String user_id = pref.GetPreferences("User Id");
+            String url = getString(R.string.url) + "MyService.asmx/ExcProcedure?Para=Proc_GetSubTsk&Para=" + taskid_st;
+            // Making a request to url and getting response
+            String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+
+            Log.d("Response: ", "> " + jsonStr);
+
+            if (jsonStr != null) {
+
+                try {
+
+                    tasks = new JSONArray(jsonStr);
+
+                    // looping through All Contacts
+                    for (int i = 0; i < tasks.length(); i++) {
+                        JSONObject c = tasks.getJSONObject(i);
+
+                        String id = c.getString(TAG_ID);
+                        String desc = c.getString(TAG_DESCRIPTION);
+
+                        //tmp hashmap for single contact
+                        HashMap<String, Object> contact = new HashMap<String, Object>();
+
+                        //adding each child node to HashMap key => value
+                        contact.put(TAG_DESCRIPTION, "Description : " + desc);
+                        contact.put(TAG_ID, id);
+                        dataList.add(contact);
+
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Log.e("ServiceHandler", "Couldn't get any data from the url");
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+//            swipe.setRefreshing(false);
+            cardAdapter = new CustomAdapter(TaskActivity.this, R.layout.task_list, dataList);
+            subtask_list.setAdapter(cardAdapter);
+        }
+    }
+
+    //Define Custom Adapter for Message Cards
+    private class CustomAdapter extends ArrayAdapter<HashMap<String, Object>> {
+
+        public CustomAdapter(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
+
+            //let android do the initializing :)
+            super(context, textViewResourceId, Strings);
+        }
+
+        //class for caching the views in a row
+        private class ViewHolder {
+
+            TextView id,desc;
+            CardView cv;
+        }
+
+        //Initialise
+        ViewHolder viewHolder;
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            if (convertView == null) {
+
+                //inflate the custom layout
+                convertView = inflater.from(parent.getContext()).inflate(R.layout.task_list, parent, false);
+                viewHolder = new ViewHolder();
+
+                //cache the views
+                viewHolder.id = (TextView) convertView.findViewById(R.id.id);
+                viewHolder.desc = (TextView) convertView.findViewById(R.id.desc);
+                viewHolder.cv = (CardView) convertView.findViewById(R.id.card_task);
+
+                //link the cached views to the convertview
+                convertView.setTag(viewHolder);
+            } else
+                viewHolder = (ViewHolder) convertView.getTag();
+
+            //set the data to be displayed
+            viewHolder.desc.setText(dataList.get(position).get("Description").toString());
+            viewHolder.id.setText(dataList.get(position).get("Id").toString());
+            return convertView;
+        }
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -140,8 +276,9 @@ public class TaskActivity extends AppCompatActivity {
             String stDate = start_st.replaceAll("\\s+", "");
             String endDate = end_st.replaceAll("\\s+", "");
             Log.d("Replaced", stDate);
-            String url = "http://vikray.in/MyService.asmx/ExcProcedure?Para=Proc_PostTaskMst&Para=" + taskid_st + "&Para=" + user_id + "&Para=" + status + "&Para=" + username;
-            // Making a request to url and getting response
+
+            //Making a request to url and getting response
+            String url = getString(R.string.url) + "MyService.asmx/ExcProcedure?Para=Proc_PostTaskMst&Para=" + taskid_st + "&Para=" + user_id + "&Para=" + status + "&Para=" + username;
 
             Log.d("Test", url);
 
@@ -159,9 +296,8 @@ public class TaskActivity extends AppCompatActivity {
                 pDialog.dismiss();
 
             Intent i = new Intent(TaskActivity.this, MainActivity.class);
-            i.putExtra("pos",pos);
+            i.putExtra("pos", pos);
             startActivity(i);
         }
     }
-
 }

@@ -75,7 +75,7 @@ public class LoginActivity extends AppCompatActivity {
             ServiceHandler sh = new ServiceHandler();
 
             String designation = pref.GetPreferences("Designation");
-            String url = "http://vikray.in/MyService.asmx/ExcProcedure?Para=Proc_ChkLogin&Para=" + username_st + "&Para=" + password_st + "&Para=" + designation;
+            String url = getString(R.string.url)+"MyService.asmx/ExcProcedure?Para=Proc_ChkLogin&Para=" + username_st + "&Para=" + password_st + "&Para=" + designation;
 
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);

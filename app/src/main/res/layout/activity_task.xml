@@ -24,7 +24,7 @@
         android:layout_marginTop="5dp"
         android:layout_below="@+id/toolbar"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         card_view:cardCornerRadius="5dp"
         card_view:cardElevation="2dp"
         card_view:contentPadding="16dp">
@@ -34,27 +34,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/desc"
-                android:layout_width="fill_parent"
+            <ListView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:text="Description" />
-
-            <TextView
-                android:id="@+id/location"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:text="Location" />
-
-            <TextView
-                android:id="@+id/priority"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:text="Priority"
-                android:visibility="gone" />
+                android:id="@+id/listView_sub"
+                android:layout_above="@+id/sub"
+                android:layout_centerHorizontal="true" />
 
         </LinearLayout>
 
@@ -127,6 +112,5 @@
         android:layout_alignStart="@+id/sub"
         android:layout_alignRight="@+id/sub"
         android:layout_alignEnd="@+id/sub" />
-
 
 </RelativeLayout>
