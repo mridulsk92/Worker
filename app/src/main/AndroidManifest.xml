@@ -12,11 +12,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
 
-        </activity>
+        <activity android:name=".MainActivity"/>
         <activity android:name=".TaskActivity" />
-        <activity android:name=".FullImageActivity" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".SplashActivity">
             <intent-filter>

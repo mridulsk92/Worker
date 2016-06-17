@@ -55,22 +55,11 @@ public class MainActivity extends AppCompatActivity {
     LayoutInflater inflater;
     JSONArray tasks;
 
-    private static String TAG_DESCRIPTION = "Description";
-    private static String TAG_STATUS = "Status";
-    private static String TAG_ID = "Id";
-    private static String TAG_STARTDATE = "TaskStartDate";
-    private static String TAG_ENDDATE = "TaskEndDate";
-    private static String TAG_PRIORITY = "TaskPriority";
-
     ArrayList<HashMap<String, Object>> dataList;
-    ArrayList<HashMap<String, Object>> highPriorityList;
-    ArrayList<HashMap<String, Object>> mediumPriorityList;
-    ArrayList<HashMap<String, Object>> lowPriorityList;
 
     String start_og, end_og;
     CustomAdapter cardAdapter;
     int pos;
-    SwipeRefreshLayout swipe;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,34 +75,10 @@ public class MainActivity extends AppCompatActivity {
         //Initialize
         tasks_list = (ListView) findViewById(R.id.listView_taskList);
         dataList = new ArrayList<HashMap<String, Object>>();
-        highPriorityList = new ArrayList<HashMap<String, Object>>();
-        mediumPriorityList = new ArrayList<HashMap<String, Object>>();
-        lowPriorityList = new ArrayList<HashMap<String, Object>>();
-        swipe = new SwipeRefreshLayout(MainActivity.this);
-
-        //on swipe
-//        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-//            @Override
-//            public void onRefresh() {
-
-//                cardAdapter.notifyDataSetChanged();
-//                dataList.clear();
-//                new GetTaskList().execute();
-//            }
-//        });
-//        swipe.post(new Runnable() {
-//                       @Override
-//                       public void run() {
-//                           swipe.setRefreshing(true);
-//
-//                           new GetTaskList().execute();
-//                       }
-//                   }
-//        );
 
         //Get preference values
         pref = new PreferencesHelper(MainActivity.this);
-        String name = pref.GetPreferences("Name");
+        String name = pref.GetPreferences("UserName");
 
         //Add header to navigation drawer
         AccountHeader headerResult = new AccountHeaderBuilder()
@@ -133,41 +98,20 @@ public class MainActivity extends AppCompatActivity {
                 .withDisplayBelowStatusBar(true)
                 .addDrawerItems(
                         new PrimaryDrawerItem().withName("About").withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
-                        new SecondaryDrawerItem().withName("Log Out").withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false),
-                        new SectionDrawerItem().withName("Filter"),
-//                        new SecondaryDrawerItem().withName("New Task").withIcon(getResources().getDrawable(R.drawable.ic_filter)).withSelectable(false),
-                        new SecondaryDrawerItem().withName("All Task").withIcon(getResources().getDrawable(R.drawable.ic_filter)).withIdentifier(6).withSelectable(false),
-                        new SecondaryDrawerItem().withName("High Priority").withIcon(getResources().getDrawable(R.drawable.ic_filter)).withIdentifier(3).withSelectable(false),
-                        new SecondaryDrawerItem().withName("Medium Priority").withIcon(getResources().getDrawable(R.drawable.ic_filter)).withIdentifier(4).withSelectable(false),
-                        new SecondaryDrawerItem().withName("Low Priority").withIcon(getResources().getDrawable(R.drawable.ic_filter)).withIdentifier(5).withSelectable(false)
+                        new SecondaryDrawerItem().withName("Log Out").withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
                 ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
 
                         if (drawerItem != null) {
-                            if (drawerItem.getIdentifier() == 3) {
+                            if (drawerItem.getIdentifier() == 1) {
 
-                                //Load high priority tasks
-                                cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, highPriorityList);
-                                tasks_list.setAdapter(cardAdapter);
+                                //Clicked About
 
-                            } else if (drawerItem.getIdentifier() == 4) {
+                            } else if (drawerItem.getIdentifier() == 2) {
 
-                                //Load Medium priority tasks
-                                cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, mediumPriorityList);
-                                tasks_list.setAdapter(cardAdapter);
+                                //Clicked LogOut
 
-                            } else if (drawerItem.getIdentifier() == 5) {
-
-                                //Load low priority tasks
-                                cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, lowPriorityList);
-                                tasks_list.setAdapter(cardAdapter);
-
-                            } else if (drawerItem.getIdentifier() == 6) {
-
-                                //Load all tasks
-                                cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
-                                tasks_list.setAdapter(cardAdapter);
                             }
                         }
                         return false;
@@ -175,28 +119,40 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .build();
 
+        //ToggleButton on ToolBar
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         result.getActionBarDrawerToggle().setDrawerIndicatorEnabled(true);
 
+        //onClick of ListView items
         tasks_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 //Get TextView values and assign to String
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
-                String loc = ((TextView) view.findViewById(R.id.location)).getText().toString();
+                String jobOrder = ((TextView) view.findViewById(R.id.jobOrder)).getText().toString();
+                String statusId = ((TextView) view.findViewById(R.id.statusId)).getText().toString();
+                String comments = ((TextView) view.findViewById(R.id.comments)).getText().toString();
+                String priority = ((TextView) view.findViewById(R.id.priority)).getText().toString();
+                String subTaskId = ((TextView) view.findViewById(R.id.subtask_id)).getText().toString();
                 String st_date = ((TextView) view.findViewById(R.id.start)).getText().toString();
                 String end_date = ((TextView) view.findViewById(R.id.end)).getText().toString();
                 String taskId = ((TextView) view.findViewById(R.id.task_id)).getText().toString();
+                String createdBy_st = ((TextView) view.findViewById(R.id.createdBy)).getText().toString();
 
                 //Pass the Strings to the next Activity
                 Intent i = new Intent(MainActivity.this, TaskActivity.class);
                 i.putExtra("desc", desc);
-                i.putExtra("loc", loc);
-                i.putExtra("start", start_og);
-                i.putExtra("end", end_og);
+//                i.putExtra("jobOrder", jobOrder);
+//                i.putExtra("start", start_og);
+//                i.putExtra("end", end_og);
                 i.putExtra("task_id", taskId);
                 i.putExtra("pos", position);
+                i.putExtra("statusId", statusId);
+                i.putExtra("comments", comments);
+                i.putExtra("priority", priority);
+                i.putExtra("subTaskId", subTaskId);
+                i.putExtra("createdBy", createdBy_st);
                 startActivity(i);
             }
         });
@@ -222,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView status, desc, priority, startdate, enddate, loc, id;
+            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy;
             CardView cv;
         }
 
@@ -239,12 +195,15 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
-                viewHolder.status = (TextView) convertView.findViewById(R.id.status);
+                viewHolder.createdBy = (TextView) convertView.findViewById(R.id.createdBy);
+                viewHolder.subId = (TextView) convertView.findViewById(R.id.subtask_id);
+                viewHolder.comments = (TextView) convertView.findViewById(R.id.comments);
                 viewHolder.desc = (TextView) convertView.findViewById(R.id.desc);
                 viewHolder.priority = (TextView) convertView.findViewById(R.id.priority);
                 viewHolder.startdate = (TextView) convertView.findViewById(R.id.start);
                 viewHolder.enddate = (TextView) convertView.findViewById(R.id.end);
-                viewHolder.loc = (TextView) convertView.findViewById(R.id.location);
+                viewHolder.jobOrder = (TextView) convertView.findViewById(R.id.jobOrder);
+                viewHolder.statusId = (TextView) convertView.findViewById(R.id.statusId);
                 viewHolder.id = (TextView) convertView.findViewById(R.id.task_id);
                 viewHolder.cv = (CardView) convertView.findViewById(R.id.card_task);
 
@@ -254,27 +213,18 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
-            viewHolder.status.setText(dataList.get(position).get("Status").toString());
+            viewHolder.createdBy.setText(dataList.get(position).get("CreatedBy").toString());
+            viewHolder.comments.setText(dataList.get(position).get("Comments").toString());
             viewHolder.desc.setText(dataList.get(position).get("Description").toString());
-            viewHolder.priority.setText(dataList.get(position).get("TaskPriority").toString());
-            viewHolder.startdate.setText(dataList.get(position).get("TaskStartDate").toString());
-            viewHolder.enddate.setText(dataList.get(position).get("TaskEndDate").toString());
-//            viewHolder.loc.setText(dataList.get(position).get("ago").toString());
-            viewHolder.id.setText(dataList.get(position).get("Id").toString());
-//            viewHolder.cv.setCardBackgroundColor(Color.parseColor(dataList.get(position).get("color").toString()));
+            viewHolder.priority.setText(dataList.get(position).get("Priority").toString());
+//            viewHolder.startdate.setText(dataList.get(position).get("TaskStartDate").toString());
+//            viewHolder.enddate.setText(dataList.get(position).get("TaskEndDate").toString());
+//            viewHolder.jobOrder.setText(dataList.get(position).get("JobOrder").toString());
+            viewHolder.statusId.setText(dataList.get(position).get("StatusId").toString());
+            viewHolder.id.setText(dataList.get(position).get("TaskId").toString());
+            viewHolder.subId.setText(dataList.get(position).get("SubTaskId").toString());
             return convertView;
         }
-    }
-
-    private void refreshContent() {
-
-//        new GetTaskList().execute();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                swipe.setRefreshing(false);
-            }
-        }, 5000);
     }
 
     //AsyncTask to get tasks(to be edited)
@@ -283,12 +233,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            // Showing progress dialog
-            dataList.clear();
-            highPriorityList.clear();
-            mediumPriorityList.clear();
-            lowPriorityList.clear();
 
+            dataList.clear();
+            // Showing progress dialog
             pDialog = new ProgressDialog(MainActivity.this);
             pDialog.setMessage("Please wait...");
             pDialog.setCancelable(false);
@@ -300,8 +247,11 @@ public class MainActivity extends AppCompatActivity {
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
 
-            String user_id = pref.GetPreferences("User Id");
-            String url = getString(R.string.url)+"MyService.asmx/ExcProcedure?Para=Proc_GetTaskMst&Para=" + user_id;
+            String user_id = pref.GetPreferences("UserId");
+
+            String url = getString(R.string.url)+"/EagleXpetizeService.svc/SubTasks/"+user_id+"/0/1/1";
+            Log.d("Url",url);
+
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
 
@@ -313,84 +263,28 @@ public class MainActivity extends AppCompatActivity {
 
                     tasks = new JSONArray(jsonStr);
 
-                    // looping through All Contacts
+                    // Looping through Array
                     for (int i = 0; i < tasks.length(); i++) {
                         JSONObject c = tasks.getJSONObject(i);
 
-                        String id = c.getString(TAG_ID);
-                        String desc = c.getString(TAG_DESCRIPTION);
-                        start_og = c.getString(TAG_STARTDATE);
-                        end_og = c.getString(TAG_ENDDATE);
-                        int priority = c.getInt(TAG_PRIORITY);
-                        String priority_string = "High";
-
-                        if (priority == 1) {
-
-                            priority_string = "High";
-
-                            HashMap<String, Object> tempHigh = new HashMap<String, Object>();
-
-                            tempHigh.put(TAG_STATUS, "New Task");
-                            tempHigh.put(TAG_DESCRIPTION, "Description : " + desc);
-                            tempHigh.put(TAG_ID, id);
-                            tempHigh.put(TAG_STARTDATE, "Start Date : " + start_og);
-                            tempHigh.put(TAG_ENDDATE, "End Date : " + end_og);
-                            tempHigh.put(TAG_PRIORITY, "Priority : " + priority_string);
-                            highPriorityList.add(tempHigh);
-
-                        } else if (priority == 2) {
-
-                            priority_string = "Medium";
-
-                            HashMap<String, Object> tempMedium = new HashMap<String, Object>();
-
-                            tempMedium.put(TAG_STATUS, "New Task");
-                            tempMedium.put(TAG_DESCRIPTION, "Description : " + desc);
-                            tempMedium.put(TAG_ID, id);
-                            tempMedium.put(TAG_STARTDATE, "Start Date : " + start_og);
-                            tempMedium.put(TAG_ENDDATE, "End Date : " + end_og);
-                            tempMedium.put(TAG_PRIORITY, "Priority : " + priority_string);
-                            mediumPriorityList.add(tempMedium);
-
-                        } else if (priority == 3) {
-
-                            priority_string = "Low";
-
-                            HashMap<String, Object> tempLow = new HashMap<String, Object>();
-
-                            tempLow.put(TAG_STATUS, "New Task");
-                            tempLow.put(TAG_DESCRIPTION, "Description : " + desc);
-                            tempLow.put(TAG_ID, id);
-                            tempLow.put(TAG_STARTDATE, "Start Date : " + start_og);
-                            tempLow.put(TAG_ENDDATE, "End Date : " + end_og);
-                            tempLow.put(TAG_PRIORITY, "Priority : " + priority_string);
-                            lowPriorityList.add(tempLow);
-
-                        } else {
-                            priority_string = "High";
-
-                            HashMap<String, Object> tempHigh = new HashMap<String, Object>();
-
-                            tempHigh.put(TAG_STATUS, "New Task");
-                            tempHigh.put(TAG_DESCRIPTION, "Description : " + desc);
-                            tempHigh.put(TAG_ID, id);
-                            tempHigh.put(TAG_STARTDATE, "Start Date : " + start_og);
-                            tempHigh.put(TAG_ENDDATE, "End Date : " + end_og);
-                            tempHigh.put(TAG_PRIORITY, "Priority : " + priority_string);
-                            highPriorityList.add(tempHigh);
-
-                        }
-
-                        //tmp hashmap for single contact
-                        HashMap<String, Object> contact = new HashMap<String, Object>();
+                        String id = c.getString("TaskId");
+                        String desc = c.getString("Description");
+                        String comments = c.getString("Comments");
+                        String priority = c.getString("Priority");
+                        String createdBy = c.getString("CreatedBy");
+                        int statusId = c.getInt("StatusId");
+                        int subId = c.getInt("SubTaskId");
 
                         //adding each child node to HashMap key => value
-                        contact.put(TAG_STATUS, "New Task");
-                        contact.put(TAG_DESCRIPTION, "Description : " + desc);
-                        contact.put(TAG_ID, id);
-                        contact.put(TAG_STARTDATE, "Start Date : " + start_og);
-                        contact.put(TAG_ENDDATE, "End Date : " + end_og);
-                        contact.put(TAG_PRIORITY, "Priority : " + priority_string);
+                        HashMap<String, Object> contact = new HashMap<String, Object>();
+                        contact.put("Description", "Description : " + desc);
+                        contact.put("CreatedBy", createdBy);
+                        contact.put("TaskId", id);
+                        contact.put("SubTaskId", subId);
+                        contact.put("StatusId", statusId);
+                        contact.put("Comments", "Comments : " + comments);
+                        contact.put("Priority", "Priority : " + priority);
+
                         dataList.add(contact);
 
                     }
@@ -412,15 +306,14 @@ public class MainActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
-//            swipe.setRefreshing(false);
             cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
             tasks_list.setAdapter(cardAdapter);
 
+            //Remove Submitted Task from ListView
             if (pos >= 0) {
                 dataList.remove(pos);
                 cardAdapter.notifyDataSetChanged();
             }
-
         }
     }
 }

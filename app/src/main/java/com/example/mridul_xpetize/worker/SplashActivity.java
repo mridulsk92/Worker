@@ -20,8 +20,7 @@ public class SplashActivity extends AppCompatActivity {
             public void run() {
                 // This method will be executed once the timer is over
                 // Start your app main activity
-                PreferencesHelper pref = new PreferencesHelper(SplashActivity.this);
-                pref.SavePreferences("Designation", "3");
+
                 Intent i = new Intent(SplashActivity.this, LoginActivity.class);
                 startActivity(i);
 

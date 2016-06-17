@@ -17,11 +17,11 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/status"
+            android:id="@+id/comments"
             android:padding="5dp"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="Status" />
+            android:text="Comments" />
 
         <TextView
             android:id="@+id/desc"
@@ -31,8 +31,17 @@
             android:text="Description" />
 
         <TextView
-            android:id="@+id/location"
+            android:id="@+id/jobOrder"
             android:padding="5dp"
+            android:visibility="gone"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Location" />
+
+        <TextView
+            android:id="@+id/statusId"
+            android:padding="5dp"
+            android:visibility="gone"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="Location" />
@@ -54,9 +63,25 @@
             android:text="Priority" />
 
         <TextView
+            android:id="@+id/createdBy"
+            android:padding="5dp"
+            android:visibility="gone"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="CreatedBy" />
+
+        <TextView
+            android:id="@+id/subtask_id"
+            android:padding="5dp"
+            android:visibility="gone"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Priority" />
+
+        <TextView
             android:id="@+id/start"
             android:padding="5dp"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="Start Date" />
@@ -64,7 +89,7 @@
         <TextView
             android:id="@+id/end"
             android:padding="5dp"
-            android:visibility="visible"
+            android:visibility="gone"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="End Date" />

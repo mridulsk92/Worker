@@ -11,10 +11,25 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.prefs.PreferenceChangeEvent;
 
 public class LoginActivity extends AppCompatActivity {
@@ -25,12 +40,10 @@ public class LoginActivity extends AppCompatActivity {
     int response;
     ProgressDialog pDialog;
     PreferencesHelper pref;
-    JSONArray tasks;
 
-    private static String TAG_NAME = "Name";
-    private static String TAG_ID = "Id";
-    private static String TAG_DESIGNATION = "Designation";
-    private static String TAG_USERNAME = "UserName";
+    private static String TAG_NAME = "UserName";
+    private static String TAG_ID = "UserId";
+    private static String TAG_MESSAGE = "Message";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,15 +61,18 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                //Get EditText Values
                 username_st = username.getText().toString();
                 password_st = password.getText().toString();
 
+                //PostLogin Details to Server
                 new PostLogin().execute();
 
             }
         });
     }
 
+    //Posting class
     private class PostLogin extends AsyncTask<Void, Void, Void> {
 
         @Override
@@ -71,35 +87,35 @@ public class LoginActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... arg0) {
+
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
 
-            String designation = pref.GetPreferences("Designation");
-            String url = getString(R.string.url)+"MyService.asmx/ExcProcedure?Para=Proc_ChkLogin&Para=" + username_st + "&Para=" + password_st + "&Para=" + designation;
+            //Url with parameters
+            String url = getString(R.string.url) + "/EagleXpetizeService.svc/CheckUserLogin/" + username_st + "/" + password_st + "/Worker";
 
-            // Making a request to url and getting response
+            // Making a request to url and get response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+            Log.d("url", url);
             Log.d("Response: ", "> " + jsonStr);
 
             if (jsonStr != null) {
 
                 try {
 
-                    tasks = new JSONArray(jsonStr);
-                    // looping through All Contacts
-                    for (int i = 0; i < tasks.length(); i++) {
-                        JSONObject c = tasks.getJSONObject(i);
+                    //Get Data from Json
+                    JSONObject jsonObject = new JSONObject(jsonStr);
+                    String id = jsonObject.getString(TAG_ID);
+                    String name = jsonObject.getString(TAG_NAME);
+                    String message = jsonObject.getString(TAG_MESSAGE);
 
-                        String id = c.getString(TAG_ID);
-                        String name = c.getString(TAG_NAME);
-                        String username = c.getString(TAG_USERNAME);
-
-                        if (username.equals(username_st)) {
-                            response = 200;
-                            pref.SavePreferences("User Id", id);
-                            pref.SavePreferences("Name", name);
-                            pref.SavePreferences("User Name", username);
-                        }
+                    //Save userid and username if success
+                    if (message.equals("Success")) {
+                        response = 200;
+                        pref.SavePreferences("UserId", id);
+                        pref.SavePreferences("UserName", name);
+                    } else {
+                        response = 201;
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -117,16 +133,18 @@ public class LoginActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
+            //Login if success
             if (response == 200) {
-                Toast.makeText(LoginActivity.this,"Login Successfull",Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(i);
             } else {
-                Toast.makeText(LoginActivity.this,"Please Check Username and Password",Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Please Check Username and Password", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
+    //Remove activity from background onPause
     @Override
     protected void onPause() {
         super.onPause();
