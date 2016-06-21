@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
         //Initialise and add Toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Worker");
-        toolbar.setTitleTextColor(Color.WHITE);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        toolbar.setLogo(R.drawable.logo_ic);
 
         //Initialize
         tasks_list = (ListView) findViewById(R.id.listView_taskList);
@@ -249,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
             String user_id = pref.GetPreferences("UserId");
 
-            String url = getString(R.string.url)+"/EagleXpetizeService.svc/SubTasks/"+user_id+"/0/1/1";
+            String url = getString(R.string.url)+"/EagleXpetizeService.svc/SubTasks/"+"0"+"/0/1/1";
             Log.d("Url",url);
 
             // Making a request to url and getting response

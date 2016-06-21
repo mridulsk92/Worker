@@ -25,6 +25,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mikepenz.materialdrawer.AccountHeader;
+import com.mikepenz.materialdrawer.AccountHeaderBuilder;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -55,6 +64,7 @@ public class TaskActivity extends AppCompatActivity {
     private static String TAG_ID = "Id";
     int pos, response_json;
 
+    private Drawer result = null;
     ListView subtask_list;
     JSONArray tasks;
 
@@ -69,8 +79,55 @@ public class TaskActivity extends AppCompatActivity {
         //Initialise and add Toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Worker");
-        toolbar.setTitleTextColor(Color.WHITE);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        toolbar.setLogo(R.drawable.logo_ic);
+
+        //Get preference values
+        pref = new PreferencesHelper(TaskActivity.this);
+        String name = pref.GetPreferences("UserName");
+
+        //Add header to navigation drawer
+        AccountHeader headerResult = new AccountHeaderBuilder()
+                .withActivity(this)
+                .withHeaderBackground(R.drawable.header)
+                .addProfiles(
+                        new ProfileDrawerItem().withName(name).withEmail(name + "@gmail.com").withIcon(getResources().getDrawable(R.drawable.profile))
+                ).build();
+
+        //Drawer
+        result = new DrawerBuilder()
+                .withActivity(this)
+                .withAccountHeader(headerResult)
+                .withToolbar(toolbar)
+                .withSelectedItem(-1)
+                .withTranslucentStatusBar(false)
+                .withDisplayBelowStatusBar(true)
+                .addDrawerItems(
+                        new PrimaryDrawerItem().withName("About").withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
+                        new SecondaryDrawerItem().withName("Log Out").withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
+                ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                    @Override
+                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+
+                        if (drawerItem != null) {
+                            if (drawerItem.getIdentifier() == 1) {
+
+                                //Clicked About
+
+                            } else if (drawerItem.getIdentifier() == 2) {
+
+                                //Clicked LogOut
+
+                            }
+                        }
+                        return false;
+                    }
+                })
+                .build();
+
+        //ToggleButton on ToolBar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        result.getActionBarDrawerToggle().setDrawerIndicatorEnabled(true);
 
         //Get Intent
         Intent i = getIntent();
