@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Worker EagleXpetize</string>
+    <string name="app_name">Worker</string>
     <!--<string name="url">http://10.0.2.2/</string>-->
     <string name="url">http://vikray.in/</string>
 </resources>

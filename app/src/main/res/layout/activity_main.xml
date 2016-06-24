@@ -10,8 +10,37 @@
         android:id="@+id/toolbar"
         android:layout_width="fill_parent"
         android:layout_height="?attr/actionBarSize"
+        android:titleTextColor="@color/colorAccent"
+        app:titleTextColor="@color/colorAccent"
+        android:layout_below="@+id/card_main"
         android:background="@color/background"
         app:theme="@style/ToolbarColoredBackArrow" />
+
+    <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/card_main"
+        layout_height="wrap_content"
+        layout_width="wrap_content"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        card_view:contentPadding="1dp">
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/imageView_logo"
+                android:src="@drawable/logo_ic"
+                android:background="@null"
+                android:layout_centerVertical="true"
+                android:layout_centerHorizontal="true" />
+
+        </RelativeLayout>
+    </android.support.v7.widget.CardView>
 
 
         <ListView

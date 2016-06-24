@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+
+
+    <item
+        android:id="@+id/action_noti"
+        android:icon="@drawable/blue_bell_small"
+        app:showAsAction="ifRoom"
+        android:title="Not" />
+
+    <item
+        android:id="@+id/action_logOut"
+        android:icon="@drawable/blue_logout_small"
+        app:showAsAction="ifRoom"
+        android:title="Not" />
+</menu>
