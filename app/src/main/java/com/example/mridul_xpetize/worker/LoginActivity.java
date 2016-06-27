@@ -72,7 +72,6 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    //Posting class
     private class PostLogin extends AsyncTask<Void, Void, Void> {
 
         @Override
@@ -144,7 +143,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    //Remove activity from background onPause
     @Override
     protected void onPause() {
         super.onPause();
