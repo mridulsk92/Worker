@@ -37,10 +37,20 @@ import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
 import com.mikepenz.materialdrawer.model.SectionDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -177,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy;
+            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy, subName, isSub;
             CardView cv;
         }
 
@@ -194,10 +204,12 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
+                viewHolder.subName = (TextView) convertView.findViewById(R.id.subName);
                 viewHolder.createdBy = (TextView) convertView.findViewById(R.id.createdBy);
                 viewHolder.subId = (TextView) convertView.findViewById(R.id.subtask_id);
                 viewHolder.comments = (TextView) convertView.findViewById(R.id.comments);
                 viewHolder.desc = (TextView) convertView.findViewById(R.id.desc);
+                viewHolder.isSub = (TextView) convertView.findViewById(R.id.isSub);
                 viewHolder.priority = (TextView) convertView.findViewById(R.id.priority);
                 viewHolder.startdate = (TextView) convertView.findViewById(R.id.start);
                 viewHolder.enddate = (TextView) convertView.findViewById(R.id.end);
@@ -212,16 +224,18 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
+            viewHolder.subName.setText(dataList.get(position).get("TaskName").toString());
             viewHolder.createdBy.setText(dataList.get(position).get("CreatedBy").toString());
             viewHolder.comments.setText(dataList.get(position).get("Comments").toString());
-            viewHolder.desc.setText(dataList.get(position).get("Description").toString());
-            viewHolder.priority.setText(dataList.get(position).get("Priority").toString());
+            viewHolder.desc.setText(dataList.get(position).get("TaskDescription").toString());
+//            viewHolder.priority.setText(dataList.get(position).get("Priority").toString());
 //            viewHolder.startdate.setText(dataList.get(position).get("TaskStartDate").toString());
 //            viewHolder.enddate.setText(dataList.get(position).get("TaskEndDate").toString());
 //            viewHolder.jobOrder.setText(dataList.get(position).get("JobOrder").toString());
+            viewHolder.isSub.setText(dataList.get(position).get("IsSub").toString());
             viewHolder.statusId.setText(dataList.get(position).get("StatusId").toString());
             viewHolder.id.setText(dataList.get(position).get("TaskId").toString());
-            viewHolder.subId.setText(dataList.get(position).get("SubTaskId").toString());
+//            viewHolder.subId.setText(dataList.get(position).get("SubTaskId").toString());
             return convertView;
         }
     }
@@ -242,55 +256,96 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... arg0) {
-            // Creating service handler class instance
-            ServiceHandler sh = new ServiceHandler();
 
             String user_id = pref.GetPreferences("UserId");
 
-            String url = getString(R.string.url)+"/EagleXpetizeService.svc/SubTasks/"+"0"+"/0/1/1";
-            Log.d("Url",url);
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/TaskAssigned");
+            request.setHeader("Accept", "application/json");
+            request.setHeader("Content-type", "application/json");
 
-            // Making a request to url and getting response
-            String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+            // Build JSON string
+            JSONStringer userJson = null;
+            try {
+                userJson = new JSONStringer()
+                        .object()
+                        .key("taskDetails")
+                        .object()
+                        .key("TaskDetailsId").value(0)
+                        .key("TaskId").value(0)
+                        .key("AssignedToId").value(user_id)
+                        .key("AssignedById").value(0)
+                        .key("IsSubTask").value(1)
+                        .key("StatusId").value(0)
+                        .endObject()
+                        .endObject();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
 
-            Log.d("Response: ", "> " + jsonStr);
+            Log.d("Json", String.valueOf(userJson));
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(userJson.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
 
-            if (jsonStr != null) {
+            entity.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            entity.setContentType("application/json");
 
-                try {
+            request.setEntity(entity);
 
-                    tasks = new JSONArray(jsonStr);
+            // Send request to WCF service
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            try {
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                String response = httpClient.execute(request, responseHandler);
+                Log.d("res", response);
 
-                    // Looping through Array
-                    for (int i = 0; i < tasks.length(); i++) {
-                        JSONObject c = tasks.getJSONObject(i);
+                if (response != null) {
 
-                        String id = c.getString("TaskId");
-                        String desc = c.getString("Description");
-                        String comments = c.getString("Comments");
-                        String priority = c.getString("Priority");
-                        String createdBy = c.getString("CreatedBy");
-                        int statusId = c.getInt("StatusId");
-                        int subId = c.getInt("SubTaskId");
+                    try {
 
-                        //adding each child node to HashMap key => value
-                        HashMap<String, Object> contact = new HashMap<String, Object>();
-                        contact.put("Description", "Description : " + desc);
-                        contact.put("CreatedBy", createdBy);
-                        contact.put("TaskId", id);
-                        contact.put("SubTaskId", subId);
-                        contact.put("StatusId", statusId);
-                        contact.put("Comments", "Comments : " + comments);
-                        contact.put("Priority", "Priority : " + priority);
+                        JSONObject json1 = new JSONObject(response);
+                        tasks = json1.getJSONArray("TaskAssignedResult");
 
-                        dataList.add(contact);
+                        // Looping through Array
+                        for (int i = 0; i < tasks.length(); i++) {
+                            JSONObject c = tasks.getJSONObject(i);
 
+                            String id = c.getString("TaskId");
+                            String name = c.getString("TaskName");
+                            String desc = c.getString("TaskDescription");
+                            String comments = c.getString("Comments");
+                            String isSub = c.getString("IsSubTask");
+//                            String priority = c.getString("Priority");
+                            String createdBy = c.getString("CreatedBy");
+                            int statusId = c.getInt("StatusId");
+//                            int subId = c.getInt("SubTaskId");
+
+                            //adding each child node to HashMap key => value
+                            HashMap<String, Object> taskMap = new HashMap<String, Object>();
+                            taskMap.put("TaskDescription", desc);
+                            taskMap.put("CreatedBy", createdBy);
+                            taskMap.put("TaskId", id);
+                            taskMap.put("TaskName", name);
+                            taskMap.put("IsSub", isSub);
+//                            taskMap.put("SubTaskId", subId);
+                            taskMap.put("StatusId", statusId);
+                            taskMap.put("Comments", comments);
+//                            contact.put("Priority", "Priority : " + priority);
+
+                            dataList.add(taskMap);
+
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                } else {
+                    Log.e("ServiceHandler", "Couldn't get any data from the url");
                 }
-            } else {
-                Log.e("ServiceHandler", "Couldn't get any data from the url");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             return null;

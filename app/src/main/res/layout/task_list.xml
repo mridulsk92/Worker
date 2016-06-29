@@ -1,90 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="6dp"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:padding="6dp">
 
-        <TextView
-            android:id="@+id/comments"
-            android:padding="1dp"
-            android:textSize="14sp"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Comments" />
+    <TextView
+        android:id="@+id/subName"
+        android:textStyle="bold"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="1dp"
+        android:text="SubTask Name"
+        android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/desc"
-            android:textSize="14sp"
-            android:paddingLeft="1dp"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Description" />
+    <TextView
+        android:id="@+id/comments"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="1dp"
+        android:text="Comments"
+        android:textSize="14sp" />
 
-        <TextView
-            android:id="@+id/jobOrder"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Location" />
+    <TextView
+        android:id="@+id/desc"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="1dp"
+        android:text="Description"
+        android:textSize="14sp" />
 
-        <TextView
-            android:id="@+id/statusId"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Location" />
+    <TextView
+        android:id="@+id/jobOrder"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="Location"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/priority"
-            android:padding="1dp"
-            android:textSize="14sp"
-            android:visibility="visible"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Priority" />
+    <TextView
+        android:id="@+id/statusId"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="Location"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/task_id"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Priority" />
+    <TextView
+        android:id="@+id/priority"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="1dp"
+        android:text="Priority"
+        android:textSize="14sp"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/isSub"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="1dp"
+        android:text="IsSubTask"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/createdBy"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="CreatedBy" />
+    <TextView
+        android:id="@+id/task_id"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="Priority"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/subtask_id"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Priority" />
+    <TextView
+        android:id="@+id/createdBy"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="CreatedBy"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/start"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Start Date" />
+    <TextView
+        android:id="@+id/subtask_id"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="Priority"
+        android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/end"
-            android:padding="5dp"
-            android:visibility="gone"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="End Date" />
+    <TextView
+        android:id="@+id/start"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="Start Date"
+        android:visibility="gone" />
 
-    </LinearLayout>
+    <TextView
+        android:id="@+id/end"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="End Date"
+        android:visibility="gone" />
+
+</LinearLayout>
