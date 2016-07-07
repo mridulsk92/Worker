@@ -14,14 +14,19 @@
         android:theme="@style/AppTheme">
 
         <activity android:name=".MainActivity" />
-        <activity android:name=".TaskActivity" />
+
+        <activity
+            android:name=".TaskActivity"
+            android:noHistory="true">
+        </activity>
+
         <activity android:name=".LoginActivity" />
+
         <activity
             android:name=".SplashActivity"
             android:label="Worker EagleXpetize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

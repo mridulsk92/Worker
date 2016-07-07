@@ -73,7 +73,23 @@
         android:visibility="gone" />
 
     <TextView
+        android:id="@+id/details_id"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="DetailsID"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/createdBy"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="CreatedBy"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/assignedBy"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:padding="5dp"

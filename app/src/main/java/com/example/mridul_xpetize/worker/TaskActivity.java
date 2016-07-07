@@ -1,5 +1,6 @@
 package com.example.mridul_xpetize.worker;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,8 @@ import android.view.ViewGroup;
 
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -50,28 +53,28 @@ import org.json.JSONStringer;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 public class TaskActivity extends AppCompatActivity {
 
     TextView comments_text, dsc_text, priority_txt, desc;
-    String desc_st, loc_st, start_st, end_st, taskid_st, status_st, comments_st, priority_st, sub_id_st, userId_st, createdBy_st;
+    String desc_st, loc_st, start_st, end_st, taskid_st, status_st, comments_st, priority_st, sub_id_st, userId_st, createdBy_st, details_st, comments_post, assignedBy;
     Button submit;
     ProgressDialog pDialog;
     PreferencesHelper pref;
+    LayoutInflater inflater;
 
-    private static String TAG_DESCRIPTION = "SubTask";
-    private static String TAG_ID = "Id";
     int pos, response_json;
 
     private Drawer result = null;
-    ListView subtask_list;
-    JSONArray tasks;
+    ListView subtask_list, checklist;
 
     ArrayList<HashMap<String, Object>> dataList;
-    LayoutInflater inflater;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,11 +133,15 @@ public class TaskActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         result.getActionBarDrawerToggle().setDrawerIndicatorEnabled(true);
 
-        //Get Intent
-        Intent i = getIntent();
+        //Get Pref
         pref = new PreferencesHelper(TaskActivity.this);
         userId_st = pref.GetPreferences("UserID");
+
+        //Get Intent
+        Intent i = getIntent();
+        assignedBy = i.getStringExtra("assignedBy");
         status_st = i.getStringExtra("statusId");
+        details_st = i.getStringExtra("TaskDetailsId");
         comments_st = i.getStringExtra("comments");
         priority_st = i.getStringExtra("priority");
         sub_id_st = i.getStringExtra("subTaskId");
@@ -147,15 +154,17 @@ public class TaskActivity extends AppCompatActivity {
         pos = i.getIntExtra("pos", -1);
 
         //Initialise
+        checklist = (ListView) findViewById(R.id.listView_checklist);
         comments_text = (TextView) findViewById(R.id.comments);
         priority_txt = (TextView) findViewById(R.id.priority);
         dsc_text = (TextView) findViewById(R.id.SubDesc);
         dataList = new ArrayList<HashMap<String, Object>>();
-        subtask_list = (ListView) findViewById(R.id.listView_sub);
+        subtask_list = (ListView) findViewById(R.id.listView_checklist);
         submit = (Button) findViewById(R.id.button_submit);
         desc = (TextView) findViewById(R.id.desc);
         pref = new PreferencesHelper(TaskActivity.this);
 
+        //Set TextView values
         comments_text.setText(comments_st);
         dsc_text.setText(desc_st);
 
@@ -164,9 +173,43 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-//                new PostTask().execute();
+                SubmitDialg();
             }
         });
+
+        new GetCheckList().execute();
+    }
+
+    private void SubmitDialg() {
+
+        LayoutInflater factory = LayoutInflater.from(TaskActivity.this);
+        final View addView = factory.inflate(
+                R.layout.submit_dialog, null);
+        final AlertDialog addDialog = new AlertDialog.Builder(TaskActivity.this).create();
+        addDialog.setView(addView);
+
+        //Initialise
+        final EditText commentBox = (EditText) addView.findViewById(R.id.subimt_comment_text);
+        Button submitTask = (Button) addView.findViewById(R.id.button_submit);
+
+        //onClick of SubmitButton
+        submitTask.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                comments_post = commentBox.getText().toString();
+                new PostTask().execute();
+            }
+        });
+
+        addDialog.show();
+    }
+
+    public static String getCurrentTimeStamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        Date now = new Date();
+        String strDate = sdf.format(now);
+        return strDate;
     }
 
     private class PostTask extends AsyncTask<Void, Void, Void> {
@@ -185,7 +228,11 @@ public class TaskActivity extends AppCompatActivity {
         protected Void doInBackground(Void... arg0) {
             // Creating service handler class instance
 
-            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/?????");
+            userId_st = pref.GetPreferences("UserId");
+            String start_date = getCurrentTimeStamp();
+            String end_date = getCurrentTimeStamp();
+
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/UpdateAssignedTask");
             request.setHeader("Accept", "application/json");
             request.setHeader("Content-type", "application/json");
 
@@ -196,12 +243,15 @@ public class TaskActivity extends AppCompatActivity {
                         .object()
                         .key("taskDetails")
                         .object()
+                        .key("TaskDetailsId").value(details_st)
                         .key("TaskId").value(taskid_st)
-                        .key("AssignedTo").value(userId_st)
-                        .key("AssignedBy").value(createdBy_st)
-                        .key("StatusId").value(status_st)
-                        .key("IsSubTask").value("True")
-                        .key("Comments").value(comments_st)
+                        .key("AssignedToId").value(userId_st)
+                        .key("StartDateStr").value(start_date)
+                        .key("EndDateStr").value(end_date)
+                        .key("AssignedById").value(assignedBy)
+                        .key("StatusId").value(3)
+                        .key("IsSubTask").value(1)
+                        .key("Comments").value(comments_post)
                         .key("CreatedBy").value(createdBy_st)
                         .endObject()
                         .endObject();
@@ -237,14 +287,15 @@ public class TaskActivity extends AppCompatActivity {
                         //Get Data from Json
                         JSONObject jsonObject = new JSONObject(response);
 
-                        String message = jsonObject.getString("Message");
+                        String message = jsonObject.getString("UpdateAssignedTaskResult");
 
                         //Save userid and username if success
-                        if (message.equals("Success")) {
+                        if (message.equals("success")) {
                             response_json = 200;
                         } else {
                             response_json = 201;
                         }
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -265,10 +316,8 @@ public class TaskActivity extends AppCompatActivity {
             if (response_json == 200) {
                 Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(TaskActivity.this, MainActivity.class);
-                i.putExtra("pos", pos);
                 startActivity(i);
             } else {
-
                 Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
             }
         }
@@ -304,4 +353,84 @@ public class TaskActivity extends AppCompatActivity {
         return true;
     }
 
+    private class CustomAdapter extends ArrayAdapter<HashMap<String, Object>> {
+
+        public CustomAdapter(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
+
+            //let android do the initializing :)
+            super(context, textViewResourceId, Strings);
+        }
+
+        //class for caching the views in a row
+        private class ViewHolder {
+
+            CheckBox checkBox;
+        }
+
+        //Initialise
+        ViewHolder viewHolder;
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            if (convertView == null) {
+
+                //inflate the custom layout
+                convertView = inflater.from(parent.getContext()).inflate(R.layout.checklist, parent, false);
+                viewHolder = new ViewHolder();
+
+                //cache the views
+                viewHolder.checkBox= (CheckBox) convertView.findViewById(R.id.checkBox_item);
+
+                //link the cached views to the convertview
+                convertView.setTag(viewHolder);
+            } else
+                viewHolder = (ViewHolder) convertView.getTag();
+
+            //set the data to be displayed
+            viewHolder.checkBox.setText(dataList.get(position).get("CheckList").toString());
+            return convertView;
+        }
+    }
+
+    private class GetCheckList extends AsyncTask<Void,Void,Void>{
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            HashMap<String, Object> taskMap = new HashMap<String, Object>();
+            taskMap.put("CheckList", "item1");
+            dataList.add(taskMap);
+
+            HashMap<String, Object> taskMap2 = new HashMap<String, Object>();
+            taskMap2.put("CheckList", "item2");
+            dataList.add(taskMap2);
+
+            HashMap<String, Object> taskMap3 = new HashMap<String, Object>();
+            taskMap3.put("CheckList", "item3");
+            dataList.add(taskMap3);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+            CustomAdapter cardAdapter = new CustomAdapter(TaskActivity.this, R.layout.checklist, dataList);
+            checklist.setAdapter(cardAdapter);
+        }
+    }
 }

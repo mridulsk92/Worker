@@ -141,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
 
                 //Get TextView values and assign to String
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
+                String details_id = ((TextView) view.findViewById(R.id.details_id)).getText().toString();
+                String assignedBy = ((TextView)view.findViewById(R.id.assignedBy)).getText().toString();
                 String jobOrder = ((TextView) view.findViewById(R.id.jobOrder)).getText().toString();
                 String statusId = ((TextView) view.findViewById(R.id.statusId)).getText().toString();
                 String comments = ((TextView) view.findViewById(R.id.comments)).getText().toString();
@@ -157,20 +159,18 @@ public class MainActivity extends AppCompatActivity {
 //                i.putExtra("jobOrder", jobOrder);
 //                i.putExtra("start", start_og);
 //                i.putExtra("end", end_og);
+                i.putExtra("TaskDetailsId", details_id);
                 i.putExtra("task_id", taskId);
                 i.putExtra("pos", position);
                 i.putExtra("statusId", statusId);
                 i.putExtra("comments", comments);
                 i.putExtra("priority", priority);
                 i.putExtra("subTaskId", subTaskId);
+                i.putExtra("assignedBy",assignedBy);
                 i.putExtra("createdBy", createdBy_st);
                 startActivity(i);
             }
         });
-
-        //Get Intent
-        Intent i = getIntent();
-        pos = i.getIntExtra("pos", -1);
 
         new GetTaskList().execute();
 
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy, subName, isSub;
+            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy, subName, isSub, detailsId, assignedBy;
             CardView cv;
         }
 
@@ -204,6 +204,8 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
+                viewHolder.assignedBy = (TextView) convertView.findViewById(R.id.assignedBy);
+                viewHolder.detailsId = (TextView) convertView.findViewById(R.id.details_id);
                 viewHolder.subName = (TextView) convertView.findViewById(R.id.subName);
                 viewHolder.createdBy = (TextView) convertView.findViewById(R.id.createdBy);
                 viewHolder.subId = (TextView) convertView.findViewById(R.id.subtask_id);
@@ -224,6 +226,8 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
+            viewHolder.assignedBy.setText(dataList.get(position).get("AssignedById").toString());
+            viewHolder.detailsId.setText(dataList.get(position).get("TaskDetailsId").toString());
             viewHolder.subName.setText(dataList.get(position).get("TaskName").toString());
             viewHolder.createdBy.setText(dataList.get(position).get("CreatedBy").toString());
             viewHolder.comments.setText(dataList.get(position).get("Comments").toString());
@@ -275,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
                         .key("AssignedToId").value(user_id)
                         .key("AssignedById").value(0)
                         .key("IsSubTask").value(1)
-                        .key("StatusId").value(0)
+                        .key("StatusId").value(1)
                         .endObject()
                         .endObject();
             } catch (JSONException e) {
@@ -314,18 +318,22 @@ public class MainActivity extends AppCompatActivity {
                             JSONObject c = tasks.getJSONObject(i);
 
                             String id = c.getString("TaskId");
+                            String detailsId = c.getString("TaskDetailsId");
                             String name = c.getString("TaskName");
                             String desc = c.getString("TaskDescription");
                             String comments = c.getString("Comments");
                             String isSub = c.getString("IsSubTask");
 //                            String priority = c.getString("Priority");
                             String createdBy = c.getString("CreatedBy");
+                            String assignedBy = c.getString("AssignedById");
                             int statusId = c.getInt("StatusId");
 //                            int subId = c.getInt("SubTaskId");
 
                             //adding each child node to HashMap key => value
                             HashMap<String, Object> taskMap = new HashMap<String, Object>();
                             taskMap.put("TaskDescription", desc);
+                            taskMap.put("TaskDetailsId", detailsId);
+                            taskMap.put("AssignedById", assignedBy);
                             taskMap.put("CreatedBy", createdBy);
                             taskMap.put("TaskId", id);
                             taskMap.put("TaskName", name);
@@ -362,11 +370,6 @@ public class MainActivity extends AppCompatActivity {
             cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
             tasks_list.setAdapter(cardAdapter);
 
-            //Remove Submitted Task from ListView
-            if (pos >= 0) {
-                dataList.remove(pos);
-                cardAdapter.notifyDataSetChanged();
-            }
         }
     }
 
