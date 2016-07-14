@@ -3,11 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
 
+    <item
+        android:id="@+id/testAction"
+        android:title=""
+        android:orderInCategory="1"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/action_noti"
         android:icon="@drawable/blue_bell_small"
         app:showAsAction="ifRoom"
+        android:visible="false"
         android:title="Not" />
 
     <item

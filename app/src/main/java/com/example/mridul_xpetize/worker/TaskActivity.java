@@ -20,9 +20,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -75,6 +77,10 @@ public class TaskActivity extends AppCompatActivity {
     ListView subtask_list, checklist;
 
     ArrayList<HashMap<String, Object>> dataList;
+    List<String> checkedStrings = new ArrayList<String>();
+    int k = 0;
+    int count = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,19 +174,35 @@ public class TaskActivity extends AppCompatActivity {
         comments_text.setText(comments_st);
         dsc_text.setText(desc_st);
 
+        k=0;
+        count=0;
         //onClick of submit button
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                SubmitDialg();
+                count = checklist.getCount();
+                for (int j = 0; j < dataList.size(); j++) {
+
+                    if ((CheckBox) checklist.getChildAt(j).findViewById(R.id.checkBox_item) != null) {
+
+                        CheckBox cBox = (CheckBox) checklist.getChildAt(j).findViewById(R.id.checkBox_item);
+
+                        if (cBox.isChecked()) {
+                            k++;
+                        }
+                    }
+                }
+
+
+                SubmitDialog();
             }
         });
 
         new GetCheckList().execute();
     }
 
-    private void SubmitDialg() {
+    private void SubmitDialog() {
 
         LayoutInflater factory = LayoutInflater.from(TaskActivity.this);
         final View addView = factory.inflate(
@@ -198,7 +220,14 @@ public class TaskActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 comments_post = commentBox.getText().toString();
-                new PostTask().execute();
+                Log.d("Test", String.valueOf(k) + String.valueOf(count));
+                if (k != count) {
+                    Toast.makeText(TaskActivity.this, "Not Completed", Toast.LENGTH_SHORT).show();
+                    new PostTask().execute("Pending");
+                }else{
+                    new PostTask().execute("Completed");
+                }
+                k=0;
             }
         });
 
@@ -212,7 +241,7 @@ public class TaskActivity extends AppCompatActivity {
         return strDate;
     }
 
-    private class PostTask extends AsyncTask<Void, Void, Void> {
+    private class PostTask extends AsyncTask<String, Void, String> {
 
         @Override
         protected void onPreExecute() {
@@ -225,8 +254,10 @@ public class TaskActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Void doInBackground(Void... arg0) {
+        protected String doInBackground(String... arg0) {
             // Creating service handler class instance
+
+            String check = arg0[0];
 
             userId_st = pref.GetPreferences("UserId");
             String start_date = getCurrentTimeStamp();
@@ -236,30 +267,57 @@ public class TaskActivity extends AppCompatActivity {
             request.setHeader("Accept", "application/json");
             request.setHeader("Content-type", "application/json");
 
-            // Build JSON string
             JSONStringer userJson = null;
-            try {
-                userJson = new JSONStringer()
-                        .object()
-                        .key("taskDetails")
-                        .object()
-                        .key("TaskDetailsId").value(details_st)
-                        .key("TaskId").value(taskid_st)
-                        .key("AssignedToId").value(userId_st)
-                        .key("StartDateStr").value(start_date)
-                        .key("EndDateStr").value(end_date)
-                        .key("AssignedById").value(assignedBy)
-                        .key("StatusId").value(3)
-                        .key("IsSubTask").value(1)
-                        .key("Comments").value(comments_post)
-                        .key("CreatedBy").value(createdBy_st)
-                        .endObject()
-                        .endObject();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            if(check.equals("Pending")) {
+                // Build JSON string
+                try {
+                    userJson = new JSONStringer()
+                            .object()
+                            .key("taskDetails")
+                            .object()
+                            .key("TaskDetailsId").value(details_st)
+                            .key("TaskId").value(taskid_st)
+                            .key("AssignedToId").value(userId_st)
+                            .key("StartDateStr").value(start_date)
+                            .key("EndDateStr").value(end_date)
+                            .key("AssignedById").value(assignedBy)
+                            .key("StatusId").value(4)
+                            .key("IsSubTask").value(1)
+                            .key("Comments").value(comments_post)
+                            .key("CreatedBy").value(createdBy_st)
+                            .endObject()
+                            .endObject();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
-            Log.d("Json", String.valueOf(userJson));
+                Log.d("Json", String.valueOf(userJson));
+            }else{
+
+                // Build JSON string
+                try {
+                    userJson = new JSONStringer()
+                            .object()
+                            .key("taskDetails")
+                            .object()
+                            .key("TaskDetailsId").value(details_st)
+                            .key("TaskId").value(taskid_st)
+                            .key("AssignedToId").value(userId_st)
+                            .key("StartDateStr").value(start_date)
+                            .key("EndDateStr").value(end_date)
+                            .key("AssignedById").value(assignedBy)
+                            .key("StatusId").value(3)
+                            .key("IsSubTask").value(1)
+                            .key("Comments").value(comments_post)
+                            .key("CreatedBy").value(createdBy_st)
+                            .endObject()
+                            .endObject();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                Log.d("Json", String.valueOf(userJson));
+            }
             StringEntity entity = null;
             try {
                 entity = new StringEntity(userJson.toString(), "UTF-8");
@@ -303,20 +361,24 @@ public class TaskActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return null;
+            return check;
         }
 
         @Override
-        protected void onPostExecute(Void result) {
+        protected void onPostExecute(String result) {
             super.onPostExecute(result);
             // Dismiss the progress dialog
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
             if (response_json == 200) {
-                Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
-                Intent i = new Intent(TaskActivity.this, MainActivity.class);
-                startActivity(i);
+                if(result.equals("Pending")) {
+                    Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                    new PostNotification().execute("Pending");
+                }else{
+                    Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                    new PostNotification().execute("Completed");
+                }
             } else {
                 Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
             }
@@ -380,7 +442,7 @@ public class TaskActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
-                viewHolder.checkBox= (CheckBox) convertView.findViewById(R.id.checkBox_item);
+                viewHolder.checkBox = (CheckBox) convertView.findViewById(R.id.checkBox_item);
 
                 //link the cached views to the convertview
                 convertView.setTag(viewHolder);
@@ -393,7 +455,7 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
-    private class GetCheckList extends AsyncTask<Void,Void,Void>{
+    private class GetCheckList extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
@@ -431,6 +493,113 @@ public class TaskActivity extends AppCompatActivity {
 
             CustomAdapter cardAdapter = new CustomAdapter(TaskActivity.this, R.layout.checklist, dataList);
             checklist.setAdapter(cardAdapter);
+        }
+    }
+
+    private class PostNotification extends AsyncTask<String, Void, Void>{
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // Showing progress dialog
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+
+            String status = params[0];
+
+            userId_st = pref.GetPreferences("UserId");
+
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/NewNotification");
+            request.setHeader("Accept", "application/json");
+            request.setHeader("Content-type", "application/json");
+
+            JSONStringer userJson = null;
+                // Build JSON string
+                try {
+                    userJson = new JSONStringer()
+                            .object()
+                            .key("notification")
+                            .object()
+                            .key("Description").value(status)
+                            .key("TaskId").value(taskid_st)
+                            .key("ById").value(userId_st)
+                            .key("ToId").value(assignedBy)
+                            .key("CreatedBy").value(userId_st)
+                            .endObject()
+                            .endObject();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                Log.d("Json", String.valueOf(userJson));
+
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(userJson.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            entity.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            entity.setContentType("application/json");
+
+            request.setEntity(entity);
+
+            // Send request to WCF service
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            try {
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                String response = httpClient.execute(request, responseHandler);
+
+                Log.d("res", response);
+
+                if (response != null) {
+
+                    try {
+
+                        //Get Data from Json
+                        JSONObject jsonObject = new JSONObject(response);
+
+                        String message = jsonObject.getString("NewNotificationResult");
+
+                        //Save userid and username if success
+                        if (message.equals("success")) {
+                            response_json = 200;
+                        } else {
+                            response_json = 201;
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+            if(response_json == 200){
+                Toast.makeText(TaskActivity.this,"Success",Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(TaskActivity.this, MainActivity.class);
+                startActivity(i);
+            }else{
+                Toast.makeText(TaskActivity.this,"Failed",Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

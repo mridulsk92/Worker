@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:padding="1dp"
         android:text="SubTask Name"
-        android:textSize="16sp" />
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/comments"
@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:padding="1dp"
         android:text="Comments"
-        android:textSize="14sp" />
+        android:textSize="10sp" />
 
     <TextView
         android:id="@+id/desc"
@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:paddingLeft="1dp"
         android:text="Description"
-        android:textSize="14sp" />
+        android:textSize="10sp" />
 
     <TextView
         android:id="@+id/jobOrder"

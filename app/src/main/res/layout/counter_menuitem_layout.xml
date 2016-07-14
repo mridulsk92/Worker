@@ -1,0 +1,22 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:id="@+id/rel_panel"
+    android:layout_height="wrap_content">
+    <ImageButton
+        android:id="@+id/button_noti"
+        android:layout_width="45dip"
+        android:src="@drawable/blue_bell_small"
+        android:background="@null"
+        android:layout_height="45dip"/>
+    <TextView
+        android:id="@+id/count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/button_noti"
+        android:layout_alignRight="@id/button_noti"
+        android:text="0"
+        android:textColor="#FFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:background="@drawable/shape_notification"/>
+</RelativeLayout>
