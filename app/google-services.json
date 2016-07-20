@@ -1,0 +1,35 @@
+{
+  "project_info": {
+    "project_number": "346338798252",
+    "project_id": "eaglexpetize-worker"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:346338798252:android:4bfc693de118095c",
+        "android_client_info": {
+          "package_name": "com.example.mridul_xpetize.worker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiAzr8wI-K4KwCEH6CgbmQtsA40frtNH8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

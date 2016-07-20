@@ -8,8 +8,11 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,6 +31,7 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -62,6 +66,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+
 public class MainActivity extends AppCompatActivity {
 
     ListView tasks_list;
@@ -70,20 +90,22 @@ public class MainActivity extends AppCompatActivity {
     private Drawer result = null;
     LayoutInflater inflater;
     JSONArray tasks;
+    RelativeLayout main_rel;
 
     ArrayList<HashMap<String, Object>> dataList;
 
     String start_og, end_og;
     CustomAdapter cardAdapter;
-    int pos;
 
     int count;
     ListView hidden_not;
     ArrayList<HashMap<String, Object>> notiList;
     MenuItem menuItem;
+    //Creating a broadcast receiver for gcm registration
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -94,10 +116,32 @@ public class MainActivity extends AppCompatActivity {
 
         //Initialize
         notiList = new ArrayList<>();
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_camera);
+        main_rel = (RelativeLayout) findViewById(R.id.main_layout);
         hidden_not = (ListView) findViewById(R.id.listView_hidden_notification);
         tasks_list = (ListView) findViewById(R.id.listView_taskList);
         dataList = new ArrayList<HashMap<String, Object>>();
 
+        //hide notification list when clicked on layout
+        main_rel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (hidden_not.getVisibility() == View.VISIBLE) {
+                    hidden_not.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        //onClick of Floating Action Button
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        //Notification List onClick
         hidden_not.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -108,14 +152,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
-
                 parent.getChildAt(position).setBackgroundColor(Color.TRANSPARENT);
-                String desc = ((TextView) view.findViewById(R.id.textview_noti)).getText().toString();
-                String byId = ((TextView) view.findViewById(R.id.noti_by)).getText().toString();
-//                Intent i = new Intent(MainActivity.this, NotificationActivity.class);
-//                i.putExtra("Description", desc);
-//                i.putExtra("ById", byId);
-//                startActivity(i);
+
             }
         });
 
@@ -174,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 //Get TextView values and assign to String
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
                 String details_id = ((TextView) view.findViewById(R.id.details_id)).getText().toString();
-                String assignedBy = ((TextView)view.findViewById(R.id.assignedBy)).getText().toString();
+                String assignedBy = ((TextView) view.findViewById(R.id.assignedBy)).getText().toString();
                 String jobOrder = ((TextView) view.findViewById(R.id.jobOrder)).getText().toString();
                 String statusId = ((TextView) view.findViewById(R.id.statusId)).getText().toString();
                 String comments = ((TextView) view.findViewById(R.id.comments)).getText().toString();
@@ -198,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
                 i.putExtra("comments", comments);
                 i.putExtra("priority", priority);
                 i.putExtra("subTaskId", subTaskId);
-                i.putExtra("assignedBy",assignedBy);
+                i.putExtra("assignedBy", assignedBy);
                 i.putExtra("createdBy", createdBy_st);
                 startActivity(i);
             }
@@ -208,6 +246,82 @@ public class MainActivity extends AppCompatActivity {
 
         new GetNotiList().execute();
 
+
+        //Initializing our broadcast receiver
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+
+            //When the broadcast received
+            //We are sending the broadcast from GCMRegistrationIntentService
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                //If the broadcast has received with success
+                //that means device is registered successfully
+                if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_SUCCESS)) {
+                    //Getting the registration token from the intent
+                    String token = intent.getStringExtra("token");
+                    //Displaying the token as toast
+                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
+
+                    //if the intent is not with success then displaying error messages
+                } else if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_ERROR)) {
+                    Toast.makeText(getApplicationContext(), "GCM registration error!", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Error occurred", Toast.LENGTH_LONG).show();
+                }
+            }
+        };
+
+        //Checking play service is available or not
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
+
+        //if play service is not available
+        if (ConnectionResult.SUCCESS != resultCode) {
+            //If play service is supported but not installed
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                //Displaying message that play service is not installed
+                Toast.makeText(getApplicationContext(), "Google Play Service is not install/enabled in this device!", Toast.LENGTH_LONG).show();
+                GooglePlayServicesUtil.showErrorNotification(resultCode, getApplicationContext());
+
+                //If play service is not supported
+                //Displaying an error message
+            } else {
+                Toast.makeText(getApplicationContext(), "This device does not support for Google Play Service!", Toast.LENGTH_LONG).show();
+            }
+
+            //If play service is available
+        } else {
+            //Starting intent to register device
+            Intent itent = new Intent(this, GCMRegistrationIntentService.class);
+            startService(itent);
+        }
+    }
+
+    //Registering receiver on activity resume
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.w("MainActivity", "onResume");
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(GCMRegistrationIntentService.REGISTRATION_SUCCESS));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(GCMRegistrationIntentService.REGISTRATION_ERROR));
+    }
+
+
+    //Unregistering receiver on activity paused
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.w("MainActivity", "onPause");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private class CustomAdapter extends ArrayAdapter<HashMap<String, Object>> {
@@ -418,7 +532,7 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView not, isRead, byId;
+            TextView not, isRead, byName, taskName;
             LinearLayout noti_linear;
         }
 
@@ -435,7 +549,8 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
-                viewHolder.byId = (TextView) convertView.findViewById(R.id.noti_by);
+                viewHolder.taskName = (TextView) convertView.findViewById(R.id.noti_task);
+                viewHolder.byName = (TextView) convertView.findViewById(R.id.noti_by);
                 viewHolder.noti_linear = (LinearLayout) convertView.findViewById(R.id.not_layout);
                 viewHolder.not = (TextView) convertView.findViewById(R.id.textview_noti);
                 viewHolder.isRead = (TextView) convertView.findViewById(R.id.textview_isRead);
@@ -446,11 +561,10 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
-            viewHolder.byId.setText(notiList.get(position).get("ById").toString());
+            viewHolder.byName.setText(notiList.get(position).get("UserName").toString());
+            viewHolder.taskName.setText(notiList.get(position).get("TaskName").toString());
             viewHolder.not.setText(notiList.get(position).get("Description").toString());
             viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
-
-            viewHolder.byId.setVisibility(View.GONE);
 
 //            for (int i = 0; i < savedList.size(); i++) {
 //                Log.d("Test Custom", String.valueOf(savedList.get(i)));
@@ -486,7 +600,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
-            String url = getString(R.string.url) + "EagleXpetizeService.svc/Notifications/" + user_id;
+            String url = getString(R.string.url) + "EagleXpetizeService.svc/Notifications/" + user_id + "/0";
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
             Log.d("Url", url);
@@ -501,6 +615,8 @@ public class MainActivity extends AppCompatActivity {
                         JSONObject c = tasks.getJSONObject(i);
 
                         String id = c.getString("TaskId");
+                        String taskName = c.getString("TaskName");
+                        String username = c.getString("UserName");
                         String description = c.getString("Description");
                         String byId = c.getString("ById");
                         String toId = c.getString("ToId");
@@ -509,6 +625,8 @@ public class MainActivity extends AppCompatActivity {
                         // adding each child node to HashMap key => value
                         HashMap<String, Object> taskMap = new HashMap<String, Object>();
                         taskMap.put("TaskId", id);
+                        taskMap.put("UserName", username);
+                        taskMap.put("TaskName", taskName);
                         taskMap.put("Description", description);
                         taskMap.put("ById", byId);
                         taskMap.put("ToId", toId);
@@ -535,7 +653,6 @@ public class MainActivity extends AppCompatActivity {
             if (pDialogN.isShowing())
                 pDialogN.dismiss();
 
-            menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
             // initialize pop up window
             CustomAdapterNot notAdapter = new CustomAdapterNot(MainActivity.this, R.layout.popup_layout, notiList);
             hidden_not.setAdapter(notAdapter);
@@ -549,6 +666,7 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_my, menu);
 
         menuItem = menu.findItem(R.id.testAction);
+        menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
         menuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {

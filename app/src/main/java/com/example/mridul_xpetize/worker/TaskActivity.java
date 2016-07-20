@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -81,7 +83,6 @@ public class TaskActivity extends AppCompatActivity {
     int k = 0;
     int count = 0;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -141,7 +142,7 @@ public class TaskActivity extends AppCompatActivity {
 
         //Get Pref
         pref = new PreferencesHelper(TaskActivity.this);
-        userId_st = pref.GetPreferences("UserID");
+        userId_st = pref.GetPreferences("UserId");
 
         //Get Intent
         Intent i = getIntent();
@@ -174,8 +175,8 @@ public class TaskActivity extends AppCompatActivity {
         comments_text.setText(comments_st);
         dsc_text.setText(desc_st);
 
-        k=0;
-        count=0;
+        k = 0;
+        count = 0;
         //onClick of submit button
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -219,15 +220,44 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                String start_date = getCurrentTimeStamp();
+                String end_date = getCurrentTimeStamp();
                 comments_post = commentBox.getText().toString();
-                Log.d("Test", String.valueOf(k) + String.valueOf(count));
                 if (k != count) {
-                    Toast.makeText(TaskActivity.this, "Not Completed", Toast.LENGTH_SHORT).show();
-                    new PostTask().execute("Pending");
-                }else{
-                    new PostTask().execute("Completed");
+                    if (isNetworkAvailable()) {
+                        Toast.makeText(TaskActivity.this, "Not Completed", Toast.LENGTH_SHORT).show();
+                        new PostTask().execute("Pending");
+                    } else {
+                        Toast.makeText(TaskActivity.this, "No Internet Connection found. Data will be stored locally",Toast.LENGTH_SHORT).show();
+                        //Store in SQLite
+                        SQLite entry = new SQLite(TaskActivity.this);
+                        entry.open();
+                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, assignedBy, "4", "1", comments_post, createdBy_st);
+                        entry.createEntryNotification("Pending", taskid_st, userId_st, assignedBy, userId_st);
+                        String count = entry.getCount();
+                        String not_count = entry.getCountNotification();
+                        Log.d("Count", count + "NotCount :" + not_count);
+                        entry.close();
+                        addDialog.dismiss();
+                    }
+                } else {
+                    if (isNetworkAvailable()) {
+                        new PostTask().execute("Completed");
+                    } else {
+                        Toast.makeText(TaskActivity.this, "No Internet Connection found. Data will be stored locally",Toast.LENGTH_SHORT).show();
+                        //Store in SQLite
+                        SQLite entry = new SQLite(TaskActivity.this);
+                        entry.open();
+                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, assignedBy, "3", "1", comments_post, createdBy_st);
+                        entry.createEntryNotification("Completed", taskid_st, userId_st, assignedBy, userId_st);
+                        String count = entry.getCount();
+                        String not_count = entry.getCountNotification();
+                        Log.d("Count", count + "NotCount :" + not_count);
+                        entry.close();
+                        addDialog.dismiss();
+                    }
                 }
-                k=0;
+                k = 0;
             }
         });
 
@@ -258,8 +288,6 @@ public class TaskActivity extends AppCompatActivity {
             // Creating service handler class instance
 
             String check = arg0[0];
-
-            userId_st = pref.GetPreferences("UserId");
             String start_date = getCurrentTimeStamp();
             String end_date = getCurrentTimeStamp();
 
@@ -268,7 +296,7 @@ public class TaskActivity extends AppCompatActivity {
             request.setHeader("Content-type", "application/json");
 
             JSONStringer userJson = null;
-            if(check.equals("Pending")) {
+            if (check.equals("Pending")) {
                 // Build JSON string
                 try {
                     userJson = new JSONStringer()
@@ -292,7 +320,7 @@ public class TaskActivity extends AppCompatActivity {
                 }
 
                 Log.d("Json", String.valueOf(userJson));
-            }else{
+            } else {
 
                 // Build JSON string
                 try {
@@ -372,10 +400,10 @@ public class TaskActivity extends AppCompatActivity {
                 pDialog.dismiss();
 
             if (response_json == 200) {
-                if(result.equals("Pending")) {
+                if (result.equals("Pending")) {
                     Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
                     new PostNotification().execute("Pending");
-                }else{
+                } else {
                     Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
                     new PostNotification().execute("Completed");
                 }
@@ -383,6 +411,13 @@ public class TaskActivity extends AppCompatActivity {
                 Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -496,7 +531,7 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
-    private class PostNotification extends AsyncTask<String, Void, Void>{
+    private class PostNotification extends AsyncTask<String, Void, Void> {
 
         @Override
         protected void onPreExecute() {
@@ -521,24 +556,24 @@ public class TaskActivity extends AppCompatActivity {
             request.setHeader("Content-type", "application/json");
 
             JSONStringer userJson = null;
-                // Build JSON string
-                try {
-                    userJson = new JSONStringer()
-                            .object()
-                            .key("notification")
-                            .object()
-                            .key("Description").value(status)
-                            .key("TaskId").value(taskid_st)
-                            .key("ById").value(userId_st)
-                            .key("ToId").value(assignedBy)
-                            .key("CreatedBy").value(userId_st)
-                            .endObject()
-                            .endObject();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            // Build JSON string
+            try {
+                userJson = new JSONStringer()
+                        .object()
+                        .key("notification")
+                        .object()
+                        .key("Description").value(status)
+                        .key("TaskId").value(taskid_st)
+                        .key("ById").value(userId_st)
+                        .key("ToId").value(assignedBy)
+                        .key("CreatedBy").value(userId_st)
+                        .endObject()
+                        .endObject();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
 
-                Log.d("Json", String.valueOf(userJson));
+            Log.d("Json", String.valueOf(userJson));
 
             StringEntity entity = null;
             try {
@@ -593,12 +628,12 @@ public class TaskActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
-            if(response_json == 200){
-                Toast.makeText(TaskActivity.this,"Success",Toast.LENGTH_SHORT).show();
+            if (response_json == 200) {
+                Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(TaskActivity.this, MainActivity.class);
                 startActivity(i);
-            }else{
-                Toast.makeText(TaskActivity.this,"Failed",Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
             }
         }
     }
