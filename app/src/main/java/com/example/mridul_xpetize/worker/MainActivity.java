@@ -5,9 +5,11 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -18,6 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -27,11 +30,14 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
@@ -94,13 +100,16 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<HashMap<String, Object>> dataList;
 
-    String start_og, end_og;
+    String start_og, end_og, createdDate;
     CustomAdapter cardAdapter;
+    SwipeRefreshLayout swipe;
 
     int count;
     ListView hidden_not;
     ArrayList<HashMap<String, Object>> notiList;
     MenuItem menuItem;
+    int click = 0;
+
     //Creating a broadcast receiver for gcm registration
     private BroadcastReceiver mRegistrationBroadcastReceiver;
 
@@ -112,15 +121,30 @@ public class MainActivity extends AppCompatActivity {
         //Initialise and add Toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Worker");
+        toolbar.setTitle(getString(R.string.TitleWorker));
 
         //Initialize
         notiList = new ArrayList<>();
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_camera);
+        swipe = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_camera);
         main_rel = (RelativeLayout) findViewById(R.id.main_layout);
         hidden_not = (ListView) findViewById(R.id.listView_hidden_notification);
         tasks_list = (ListView) findViewById(R.id.listView_taskList);
         dataList = new ArrayList<HashMap<String, Object>>();
+
+        //Swipe Refresh
+        swipe.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        Log.i("LOG TAG", "onRefresh called from SwipeRefreshLayout");
+
+                        // This method performs the actual data-refresh operation.
+                        // The method calls setRefreshing(false) when it's finished.
+                        new GetTaskList().execute();
+                    }
+                }
+        );
 
         //hide notification list when clicked on layout
         main_rel.setOnClickListener(new View.OnClickListener() {
@@ -134,12 +158,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //onClick of Floating Action Button
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//            }
+//        });
 
         //Notification List onClick
         hidden_not.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -152,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
-                parent.getChildAt(position).setBackgroundColor(Color.TRANSPARENT);
+                parent.getChildAt(position - hidden_not.getFirstVisiblePosition()).setBackgroundColor(Color.TRANSPARENT);
 
             }
         });
@@ -178,8 +202,8 @@ public class MainActivity extends AppCompatActivity {
                 .withTranslucentStatusBar(false)
                 .withDisplayBelowStatusBar(true)
                 .addDrawerItems(
-                        new PrimaryDrawerItem().withName("About").withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
-                        new SecondaryDrawerItem().withName("Log Out").withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
+                        new PrimaryDrawerItem().withName(getString(R.string.About)).withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
+                        new SecondaryDrawerItem().withName(getString(R.string.LogOut)).withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
                 ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
@@ -213,6 +237,7 @@ public class MainActivity extends AppCompatActivity {
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
                 String details_id = ((TextView) view.findViewById(R.id.details_id)).getText().toString();
                 String assignedBy = ((TextView) view.findViewById(R.id.assignedBy)).getText().toString();
+                String assignedByName = ((TextView) view.findViewById(R.id.assignedByName)).getText().toString();
                 String jobOrder = ((TextView) view.findViewById(R.id.jobOrder)).getText().toString();
                 String statusId = ((TextView) view.findViewById(R.id.statusId)).getText().toString();
                 String comments = ((TextView) view.findViewById(R.id.comments)).getText().toString();
@@ -231,6 +256,7 @@ public class MainActivity extends AppCompatActivity {
 //                i.putExtra("end", end_og);
                 i.putExtra("TaskDetailsId", details_id);
                 i.putExtra("task_id", taskId);
+                i.putExtra("AssignedByName", assignedByName);
                 i.putExtra("pos", position);
                 i.putExtra("statusId", statusId);
                 i.putExtra("comments", comments);
@@ -238,6 +264,7 @@ public class MainActivity extends AppCompatActivity {
                 i.putExtra("subTaskId", subTaskId);
                 i.putExtra("assignedBy", assignedBy);
                 i.putExtra("createdBy", createdBy_st);
+                i.putExtra("createdDate", createdDate);
                 startActivity(i);
             }
         });
@@ -261,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
                     //Getting the registration token from the intent
                     String token = intent.getStringExtra("token");
                     //Displaying the token as toast
-                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
 
                     //if the intent is not with success then displaying error messages
                 } else if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_ERROR)) {
@@ -280,20 +307,20 @@ public class MainActivity extends AppCompatActivity {
             //If play service is supported but not installed
             if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
                 //Displaying message that play service is not installed
-                Toast.makeText(getApplicationContext(), "Google Play Service is not install/enabled in this device!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.GPNotEnabled), Toast.LENGTH_LONG).show();
                 GooglePlayServicesUtil.showErrorNotification(resultCode, getApplicationContext());
 
                 //If play service is not supported
                 //Displaying an error message
             } else {
-                Toast.makeText(getApplicationContext(), "This device does not support for Google Play Service!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.GPNotSupported), Toast.LENGTH_LONG).show();
             }
 
             //If play service is available
         } else {
             //Starting intent to register device
-            Intent itent = new Intent(this, GCMRegistrationIntentService.class);
-            startService(itent);
+            Intent intent = new Intent(this, GCMRegistrationIntentService.class);
+            startService(intent);
         }
     }
 
@@ -307,7 +334,6 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
                 new IntentFilter(GCMRegistrationIntentService.REGISTRATION_ERROR));
     }
-
 
     //Unregistering receiver on activity paused
     @Override
@@ -335,7 +361,9 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy, subName, isSub, detailsId, assignedBy;
+            TextView comments, desc, priority, startdate, enddate, jobOrder, statusId, id, subId, createdBy, subName, isSub, detailsId, assignedBy, assignedByName;
+            ImageButton PlayOrPause;
+            SeekBar audioSeek;
             CardView cv;
         }
 
@@ -352,6 +380,7 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
+                viewHolder.assignedByName = (TextView) convertView.findViewById(R.id.assignedByName);
                 viewHolder.assignedBy = (TextView) convertView.findViewById(R.id.assignedBy);
                 viewHolder.detailsId = (TextView) convertView.findViewById(R.id.details_id);
                 viewHolder.subName = (TextView) convertView.findViewById(R.id.subName);
@@ -374,6 +403,7 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
+            viewHolder.assignedByName.setText(dataList.get(position).get("AssignedByName").toString());
             viewHolder.assignedBy.setText(dataList.get(position).get("AssignedById").toString());
             viewHolder.detailsId.setText(dataList.get(position).get("TaskDetailsId").toString());
             viewHolder.subName.setText(dataList.get(position).get("TaskName").toString());
@@ -388,6 +418,7 @@ public class MainActivity extends AppCompatActivity {
             viewHolder.statusId.setText(dataList.get(position).get("StatusId").toString());
             viewHolder.id.setText(dataList.get(position).get("TaskId").toString());
 //            viewHolder.subId.setText(dataList.get(position).get("SubTaskId").toString());
+
             return convertView;
         }
     }
@@ -401,7 +432,7 @@ public class MainActivity extends AppCompatActivity {
             dataList.clear();
             // Showing progress dialog
             pDialog = new ProgressDialog(MainActivity.this);
-            pDialog.setMessage("Please wait...");
+            pDialog.setMessage(getString(R.string.pDialog_wait));
             pDialog.setCancelable(false);
             pDialog.show();
         }
@@ -471,9 +502,10 @@ public class MainActivity extends AppCompatActivity {
                             String desc = c.getString("TaskDescription");
                             String comments = c.getString("Comments");
                             String isSub = c.getString("IsSubTask");
-//                            String priority = c.getString("Priority");
+                            createdDate = c.getString("CreatedDate");
                             String createdBy = c.getString("CreatedBy");
                             String assignedBy = c.getString("AssignedById");
+                            String assignedByName = c.getString("AssignedByName");
                             int statusId = c.getInt("StatusId");
 //                            int subId = c.getInt("SubTaskId");
 
@@ -489,6 +521,7 @@ public class MainActivity extends AppCompatActivity {
 //                            taskMap.put("SubTaskId", subId);
                             taskMap.put("StatusId", statusId);
                             taskMap.put("Comments", comments);
+                            taskMap.put("AssignedByName", assignedByName);
 //                            contact.put("Priority", "Priority : " + priority);
 
                             dataList.add(taskMap);
@@ -514,6 +547,10 @@ public class MainActivity extends AppCompatActivity {
             // Dismiss the progress dialog
             if (pDialog.isShowing())
                 pDialog.dismiss();
+
+            if (swipe.isRefreshing()) {
+                swipe.setRefreshing(false);
+            }
 
             cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
             tasks_list.setAdapter(cardAdapter);
@@ -588,7 +625,7 @@ public class MainActivity extends AppCompatActivity {
             dataList.clear();
             // Showing progress dialog
             pDialogN = new ProgressDialog(MainActivity.this);
-            pDialogN.setMessage("Please wait...");
+            pDialogN.setMessage(getString(R.string.pDialog_wait));
             pDialogN.setCancelable(false);
             pDialogN.show();
         }
@@ -600,7 +637,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Creating service handler class instance
             ServiceHandler sh = new ServiceHandler();
-            String url = getString(R.string.url) + "EagleXpetizeService.svc/Notifications/" + user_id + "/0";
+            String url = getString(R.string.url) + "EagleXpetizeService.svc/Notifications/" + user_id + "/1";
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
             Log.d("Url", url);
@@ -656,6 +693,7 @@ public class MainActivity extends AppCompatActivity {
             // initialize pop up window
             CustomAdapterNot notAdapter = new CustomAdapterNot(MainActivity.this, R.layout.popup_layout, notiList);
             hidden_not.setAdapter(notAdapter);
+            menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
 
         }
     }
@@ -666,7 +704,6 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_my, menu);
 
         menuItem = menu.findItem(R.id.testAction);
-        menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
         menuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -737,4 +774,5 @@ public class MainActivity extends AppCompatActivity {
 
         return new BitmapDrawable(getResources(), bitmap);
     }
+
 }

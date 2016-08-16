@@ -1,20 +1,34 @@
 package com.example.mridul_xpetize.worker;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,6 +45,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,23 +70,41 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class TaskActivity extends AppCompatActivity {
 
-    TextView comments_text, dsc_text, priority_txt, desc;
-    String desc_st, loc_st, start_st, end_st, taskid_st, status_st, comments_st, priority_st, sub_id_st, userId_st, createdBy_st, details_st, comments_post, assignedBy;
+    TextView comments_text, dsc_text, priority_txt, desc, message_view;
+    String desc_st, loc_st, start_st, end_st, taskid_st, status_st, comments_st, priority_st, sub_id_st, userId_st, createdBy_st, details_st, comments_post, assignedBy, assignedByName;
     Button submit;
     ProgressDialog pDialog;
     PreferencesHelper pref;
+    String createdDate;
     LayoutInflater inflater;
+
+    private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
+    public static final int MEDIA_TYPE_IMAGE = 1;
+    // directory name to store captured images and videos
+    private static final String IMAGE_DIRECTORY_NAME = "Worker";
+    private Uri fileUri; // file url to store image/video
+    private ImageView imgPreview;
+    ImageButton click;
+    String encodedImage;
+    Button encodeButton;
 
     int pos, response_json;
 
@@ -82,6 +115,10 @@ public class TaskActivity extends AppCompatActivity {
     List<String> checkedStrings = new ArrayList<String>();
     int k = 0;
     int count = 0;
+    private long myDownloadReference;
+    private DownloadManager dm;
+
+    Button playTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +128,7 @@ public class TaskActivity extends AppCompatActivity {
         //Initialise and add Toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toolbar.setTitle("Worker");
+        toolbar.setTitle(getString(R.string.TitleWorker));
 
         //Get preference values
         pref = new PreferencesHelper(TaskActivity.this);
@@ -114,8 +151,8 @@ public class TaskActivity extends AppCompatActivity {
                 .withTranslucentStatusBar(false)
                 .withDisplayBelowStatusBar(true)
                 .addDrawerItems(
-                        new PrimaryDrawerItem().withName("About").withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
-                        new SecondaryDrawerItem().withName("Log Out").withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
+                        new PrimaryDrawerItem().withName(getString(R.string.About)).withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
+                        new SecondaryDrawerItem().withName(getString(R.string.LogOut)).withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
                 ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
@@ -146,6 +183,7 @@ public class TaskActivity extends AppCompatActivity {
 
         //Get Intent
         Intent i = getIntent();
+        assignedByName = i.getStringExtra("AssignedByName");
         assignedBy = i.getStringExtra("assignedBy");
         status_st = i.getStringExtra("statusId");
         details_st = i.getStringExtra("TaskDetailsId");
@@ -158,15 +196,21 @@ public class TaskActivity extends AppCompatActivity {
         end_st = i.getStringExtra("end");
         taskid_st = i.getStringExtra("task_id");
         createdBy_st = i.getStringExtra("createdBy");
+        createdDate = i.getStringExtra("createdDate");
         pos = i.getIntExtra("pos", -1);
 
         //Initialise
+        playTask = (Button) findViewById(R.id.button_play);
+        message_view = (TextView) findViewById(R.id.textView_message);
+        encodeButton = (Button) findViewById(R.id.button_encode);
+        click = (ImageButton) findViewById(R.id.imageButton_camera);
+        imgPreview = (ImageView) findViewById(R.id.imageView_attachment);
         checklist = (ListView) findViewById(R.id.listView_checklist);
         comments_text = (TextView) findViewById(R.id.comments);
         priority_txt = (TextView) findViewById(R.id.priority);
         dsc_text = (TextView) findViewById(R.id.SubDesc);
         dataList = new ArrayList<HashMap<String, Object>>();
-        subtask_list = (ListView) findViewById(R.id.listView_checklist);
+//        subtask_list = (ListView) findViewById(R.id.listView_checklist);
         submit = (Button) findViewById(R.id.button_submit);
         desc = (TextView) findViewById(R.id.desc);
         pref = new PreferencesHelper(TaskActivity.this);
@@ -175,12 +219,24 @@ public class TaskActivity extends AppCompatActivity {
         comments_text.setText(comments_st);
         dsc_text.setText(desc_st);
 
+        File f = new File(Environment.getExternalStorageDirectory().getPath() + "/WorkerAudio/SubTask"+taskid_st+".mp3");
+        if(!f.exists()) {
+            downloadAudio();
+        }
+
         k = 0;
         count = 0;
         //onClick of submit button
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+
+                final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+                Bitmap temp = getResizedBitmap(bitmap, 260, 260);
+                encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
+//                encodedImage = resizeBase64Image(temp);
+//                encodedImage = getString(R.string.audioEncode);
 
                 count = checklist.getCount();
                 for (int j = 0; j < dataList.size(); j++) {
@@ -194,13 +250,188 @@ public class TaskActivity extends AppCompatActivity {
                         }
                     }
                 }
-
-
                 SubmitDialog();
             }
         });
 
+        playTask.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                File file = new File(Environment.getExternalStorageDirectory().getPath() + "/WorkerAudio/SubTask" + taskid_st + ".mp3");
+
+                if (file.exists()) {
+                    Intent intent = new Intent();
+                    intent.setAction(android.content.Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.fromFile(file), "audio/*");
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(TaskActivity.this, getString(R.string.NoAudio), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                long reference = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                if (myDownloadReference == reference) {
+                    // Do something with downloaded file.
+                    Toast.makeText(TaskActivity.this, getString(R.string.DownloadComplete), Toast.LENGTH_SHORT).show();
+                    playTask.setVisibility(View.VISIBLE);
+                    message_view.setVisibility(View.GONE);
+                }
+            }
+        };
+        registerReceiver(receiver, filter);
+
         new GetCheckList().execute();
+
+        //onClick of attachment view
+        click.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                captureImage();
+            }
+        });
+    }
+
+    private void downloadAudio() {
+
+        String path;
+        message_view.setVisibility(View.VISIBLE);
+        playTask.setVisibility(View.GONE);
+
+        File f = new File(Environment.getExternalStorageDirectory().getPath() + "/WorkerAudio");
+        if (!f.exists()) {
+            f.mkdir();
+        }
+        path = f.getPath();
+
+        dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        DownloadManager.Request req = new DownloadManager.Request(Uri.parse("http://vikray.in/NImage/SubTask" + taskid_st + ".mp3"));
+
+        req.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI
+                | DownloadManager.Request.NETWORK_MOBILE)
+                .setAllowedOverRoaming(false)
+                .setTitle("Worker")
+                .setDescription("Downloading Task Audio")
+                .setDestinationInExternalPublicDir("" + "/WorkerAudio/", "SubTask" + taskid_st + ".mp3");
+        myDownloadReference = dm.enqueue(req);
+    }
+
+    private void captureImage() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
+
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+
+        // start the image capture Intent
+        startActivityForResult(intent, CAMERA_CAPTURE_IMAGE_REQUEST_CODE);
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // if the result is capturing Image
+        if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                // successfully captured the image
+                // display it in image view
+                previewCapturedImage();
+
+            } else if (resultCode == RESULT_CANCELED) {
+                // user cancelled Image capture
+                Toast.makeText(getApplicationContext(),
+                        getString(R.string.CaptureCancelled), Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                // failed to capture image
+                Toast.makeText(getApplicationContext(),
+                        getString(R.string.CaptureFailed), Toast.LENGTH_SHORT)
+                        .show();
+            }
+        }
+    }
+
+    private void previewCapturedImage() {
+        try {
+            imgPreview.setVisibility(View.VISIBLE);
+
+            // bimatp factory
+            BitmapFactory.Options options = new BitmapFactory.Options();
+
+            // downsizing image as it throws OutOfMemory Exception for larger
+            // images
+            options.inSampleSize = 8;
+
+            final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(),
+                    options);
+
+            imgPreview.setImageBitmap(bitmap);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String encodeToBase64(Bitmap image, Bitmap.CompressFormat compressFormat, int quality) {
+        ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+        image.compress(compressFormat, quality, byteArrayOS);
+        return Base64.encodeToString(byteArrayOS.toByteArray(), Base64.DEFAULT);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // save file url in bundle as it will be null on scren orientation
+        // changes
+        outState.putParcelable("file_uri", fileUri);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // get the file url
+        fileUri = savedInstanceState.getParcelable("file_uri");
+    }
+
+    public Uri getOutputMediaFileUri(int type) {
+        return Uri.fromFile(getOutputMediaFile(type));
+    }
+
+    private static File getOutputMediaFile(int type) {
+
+        // External sdcard location
+        File mediaStorageDir = new File(
+                Environment
+                        .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                IMAGE_DIRECTORY_NAME);
+
+        // Create the storage directory if it does not exist
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                Log.d(IMAGE_DIRECTORY_NAME, "Oops! Failed create "
+                        + IMAGE_DIRECTORY_NAME + " directory");
+                return null;
+            }
+        }
+
+        // Create a media file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                Locale.getDefault()).format(new Date());
+        File mediaFile;
+        String tempName = "IMG_" + timeStamp + ".jpg";
+        if (type == MEDIA_TYPE_IMAGE) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator
+                    + tempName);
+        } else {
+            return null;
+        }
+
+        return mediaFile;
     }
 
     private void SubmitDialog() {
@@ -225,14 +456,16 @@ public class TaskActivity extends AppCompatActivity {
                 comments_post = commentBox.getText().toString();
                 if (k != count) {
                     if (isNetworkAvailable()) {
-                        Toast.makeText(TaskActivity.this, "Not Completed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TaskActivity.this, getString(R.string.NotCompleted), Toast.LENGTH_SHORT).show();
+                        new PostAttachment().execute();
                         new PostTask().execute("Pending");
                     } else {
-                        Toast.makeText(TaskActivity.this, "No Internet Connection found. Data will be stored locally",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TaskActivity.this, getString(R.string.NoConnection), Toast.LENGTH_SHORT).show();
                         //Store in SQLite
+                        String current_time = getCurrentTimeStamp();
                         SQLite entry = new SQLite(TaskActivity.this);
                         entry.open();
-                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, assignedBy, "4", "1", comments_post, createdBy_st);
+                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, current_time, assignedBy, "4", "1", comments_post, createdBy_st);
                         entry.createEntryNotification("Pending", taskid_st, userId_st, assignedBy, userId_st);
                         String count = entry.getCount();
                         String not_count = entry.getCountNotification();
@@ -242,13 +475,15 @@ public class TaskActivity extends AppCompatActivity {
                     }
                 } else {
                     if (isNetworkAvailable()) {
+                        new PostAttachment().execute();
                         new PostTask().execute("Completed");
                     } else {
-                        Toast.makeText(TaskActivity.this, "No Internet Connection found. Data will be stored locally",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TaskActivity.this, getString(R.string.NoConnection), Toast.LENGTH_SHORT).show();
                         //Store in SQLite
+                        String current_time = getCurrentTimeStamp();
                         SQLite entry = new SQLite(TaskActivity.this);
                         entry.open();
-                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, assignedBy, "3", "1", comments_post, createdBy_st);
+                        entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, current_time, assignedBy, "3", "1", comments_post, createdBy_st);
                         entry.createEntryNotification("Completed", taskid_st, userId_st, assignedBy, userId_st);
                         String count = entry.getCount();
                         String not_count = entry.getCountNotification();
@@ -271,6 +506,125 @@ public class TaskActivity extends AppCompatActivity {
         return strDate;
     }
 
+    public Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height,
+                matrix, false);
+
+        return resizedBitmap;
+    }
+
+    private class PostAttachment extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // Showing progress dialog
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage(getString(R.string.pDialog_wait));
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            userId_st = pref.GetPreferences("UserId");
+
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/NewAttachment");
+            request.setHeader("Accept", "application/json");
+            request.setHeader("Content-type", "application/json");
+
+            JSONStringer userJson = null;
+            // Build JSON string
+            try {
+                userJson = new JSONStringer()
+                        .object()
+                        .key("attachment")
+                        .object()
+                        .key("TaskId").value(taskid_st)
+                        .key("IsSubTask").value(true)
+                        .key("File").value(encodedImage)
+                        .key("FileType").value("jpg")
+                        .key("ModifiedBy").value(userId_st)
+                        .key("CreatedBy").value(userId_st)
+                        .endObject()
+                        .endObject();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            Log.d("Json", String.valueOf(userJson));
+
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(userJson.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            entity.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            entity.setContentType("application/json");
+
+            request.setEntity(entity);
+
+            // Send request to WCF service
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            try {
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                String response = httpClient.execute(request, responseHandler);
+
+                Log.d("res", response);
+
+                if (response != null) {
+
+                    try {
+
+                        //Get Data from Json
+                        JSONObject jsonObject = new JSONObject(response);
+
+                        String message = jsonObject.getString("NewAttachmentResult");
+
+                        //Save userid and username if success
+                        if (message.equals("success")) {
+                            response_json = 200;
+                        } else {
+                            response_json = 201;
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+            if (response_json == 200) {
+                Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(TaskActivity.this, MainActivity.class);
+                startActivity(i);
+            } else {
+                Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private class PostTask extends AsyncTask<String, Void, String> {
 
         @Override
@@ -278,7 +632,7 @@ public class TaskActivity extends AppCompatActivity {
             super.onPreExecute();
             // Showing progress dialog
             pDialog = new ProgressDialog(TaskActivity.this);
-            pDialog.setMessage("Please wait...");
+            pDialog.setMessage(getString(R.string.pDialog_wait));
             pDialog.setCancelable(false);
             pDialog.show();
         }
@@ -290,6 +644,7 @@ public class TaskActivity extends AppCompatActivity {
             String check = arg0[0];
             String start_date = getCurrentTimeStamp();
             String end_date = getCurrentTimeStamp();
+            String current_time = getCurrentTimeStamp();
 
             HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/UpdateAssignedTask");
             request.setHeader("Accept", "application/json");
@@ -307,6 +662,7 @@ public class TaskActivity extends AppCompatActivity {
                             .key("TaskId").value(taskid_st)
                             .key("AssignedToId").value(userId_st)
                             .key("StartDateStr").value(start_date)
+                            .key("ModifiedDateStr").value(current_time)
                             .key("EndDateStr").value(end_date)
                             .key("AssignedById").value(assignedBy)
                             .key("StatusId").value(4)
@@ -332,6 +688,7 @@ public class TaskActivity extends AppCompatActivity {
                             .key("TaskId").value(taskid_st)
                             .key("AssignedToId").value(userId_st)
                             .key("StartDateStr").value(start_date)
+                            .key("ModifiedDateStr").value(current_time)
                             .key("EndDateStr").value(end_date)
                             .key("AssignedById").value(assignedBy)
                             .key("StatusId").value(3)
@@ -401,14 +758,16 @@ public class TaskActivity extends AppCompatActivity {
 
             if (response_json == 200) {
                 if (result.equals("Pending")) {
-                    Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
                     new PostNotification().execute("Pending");
+                    new PostHistory().execute("Pending");
                 } else {
-                    Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
                     new PostNotification().execute("Completed");
+                    new PostHistory().execute("Completed");
                 }
             } else {
-                Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -497,7 +856,7 @@ public class TaskActivity extends AppCompatActivity {
             super.onPreExecute();
             // Showing progress dialog
             pDialog = new ProgressDialog(TaskActivity.this);
-            pDialog.setMessage("Please wait...");
+            pDialog.setMessage(getString(R.string.pDialog_wait));
             pDialog.setCancelable(false);
             pDialog.show();
         }
@@ -539,7 +898,7 @@ public class TaskActivity extends AppCompatActivity {
 
             // Showing progress dialog
             pDialog = new ProgressDialog(TaskActivity.this);
-            pDialog.setMessage("Please wait...");
+            pDialog.setMessage(getString(R.string.pDialog_wait));
             pDialog.setCancelable(false);
             pDialog.show();
         }
@@ -629,12 +988,127 @@ public class TaskActivity extends AppCompatActivity {
                 pDialog.dismiss();
 
             if (response_json == 200) {
-                Toast.makeText(TaskActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(TaskActivity.this, MainActivity.class);
                 startActivity(i);
             } else {
-                Toast.makeText(TaskActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
             }
         }
     }
+
+    private class PostHistory extends AsyncTask<String, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(TaskActivity.this);
+            pDialog.setMessage(getString(R.string.pDialog_wait));
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+
+            String historyDate = getCurrentTimeStamp();
+            String status = params[0];
+            String username = pref.GetPreferences("UserName");
+
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/NewHistory");
+            request.setHeader("Accept", "application/json");
+            request.setHeader("Content-type", "application/json");
+
+            JSONStringer userJson = null;
+            // Build JSON string
+            try {
+                userJson = new JSONStringer()
+                        .object()
+                        .key("history")
+                        .object()
+                        .key("TaskId").value(taskid_st)
+                        .key("IsSubTask").value(1)
+                        .key("Notes").value("SubTask Submitted for approval by: " + username)
+                        .key("Comments").value(status)
+//                        .key("HistoryDate").value(historyDate)
+//                        .key("CreatedDate").value(createdDate)
+                        .key("CreatedBy").value(userId_st)
+                        .endObject()
+                        .endObject();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            Log.d("Json", String.valueOf(userJson));
+
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(userJson.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            entity.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            entity.setContentType("application/json");
+
+            request.setEntity(entity);
+
+            // Send request to WCF service
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            try {
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                String response = httpClient.execute(request, responseHandler);
+
+                Log.d("res", response);
+
+                if (response != null) {
+
+                    try {
+
+                        //Get Data from Json
+                        JSONObject jsonObject = new JSONObject(response);
+
+                        String message = jsonObject.getString("NewHistoryResult");
+
+                        //Save userid and username if success
+                        if (message.equals("success")) {
+                            response_json = 200;
+                        } else {
+                            response_json = 201;
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+
+            if (response_json == 200) {
+                Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(TaskActivity.this, MainActivity.class);
+                startActivity(i);
+            } else {
+                Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+//        super.finish();
+//    }
 }

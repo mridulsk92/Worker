@@ -79,7 +79,7 @@ public class LoginActivity extends AppCompatActivity {
             super.onPreExecute();
             // Showing progress dialog
             pDialog = new ProgressDialog(LoginActivity.this);
-            pDialog.setMessage("Please wait...");
+            pDialog.setMessage(getString(R.string.pDialog_wait));
             pDialog.setCancelable(false);
             pDialog.show();
         }
@@ -134,11 +134,11 @@ public class LoginActivity extends AppCompatActivity {
 
             //Login if success
             if (response == 200) {
-                Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, getString(R.string.LoginSuccess), Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(i);
             } else {
-                Toast.makeText(LoginActivity.this, "Please Check Username and Password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, getString(R.string.LoginFailed), Toast.LENGTH_SHORT).show();
             }
         }
     }

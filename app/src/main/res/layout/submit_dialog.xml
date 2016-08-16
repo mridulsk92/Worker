@@ -9,7 +9,7 @@
         android:layout_height="200dp"
         android:id="@+id/subimt_comment_text"
         android:padding="7dp"
-        android:hint="Type Your Comment Here...."
+        android:hint="@string/CommentBox"
         android:gravity="top"
         android:layout_margin="5dp"
         android:background="@drawable/edittext_modified"
@@ -21,7 +21,7 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Submit"
+        android:text="@string/Submit"
         android:id="@+id/button_submit"
         android:layout_below="@+id/subimt_comment_text"
         android:layout_centerHorizontal="true" />

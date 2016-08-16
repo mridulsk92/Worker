@@ -31,7 +31,7 @@ import java.util.Date;
 public class PostService extends Service {
 
     Calendar cur_cal = Calendar.getInstance();
-    String db_details, db_task, db_start, db_end, db_by, db_comments, db_status, db_user, db_sub, db_created;
+    String db_details, db_task, db_start, db_end, db_by, db_comments, db_status, db_user, db_sub, db_created, db_modified;
     String db_desc, db_not_task, db_not_by, db_not_to, db_not_created;
     int response_json, count, countNot;
 
@@ -95,11 +95,12 @@ public class PostService extends Service {
             db_user = datas[3];
             db_start = datas[4];
             db_end = datas[5];
-            db_by = datas[6];
-            db_status = datas[7];
-            db_sub = datas[8];
-            db_comments = datas[9];
-            db_created = datas[10];
+            db_modified = datas[6];
+            db_by = datas[7];
+            db_status = datas[8];
+            db_sub = datas[9];
+            db_comments = datas[10];
+            db_created = datas[11];
             getData.close();
             new PostTask().execute();
 
@@ -133,6 +134,7 @@ public class PostService extends Service {
                         .key("AssignedToId").value(db_user)
                         .key("StartDateStr").value(db_start)
                         .key("EndDateStr").value(db_end)
+                        .key("ModifiedDateStr").value(db_modified)
                         .key("AssignedById").value(db_by)
                         .key("StatusId").value(db_status)
                         .key("IsSubTask").value(db_sub)
