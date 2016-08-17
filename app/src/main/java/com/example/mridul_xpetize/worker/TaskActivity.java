@@ -6,8 +6,10 @@ import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -117,7 +119,7 @@ public class TaskActivity extends AppCompatActivity {
     int count = 0;
     private long myDownloadReference;
     private DownloadManager dm;
-
+    SharedPreferences prefNew;
     Button playTask;
 
     @Override
@@ -129,6 +131,7 @@ public class TaskActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitle(getString(R.string.TitleWorker));
+        prefNew = getSharedPreferences("LangPref", Activity.MODE_PRIVATE);
 
         //Get preference values
         pref = new PreferencesHelper(TaskActivity.this);
@@ -152,6 +155,7 @@ public class TaskActivity extends AppCompatActivity {
                 .withDisplayBelowStatusBar(true)
                 .addDrawerItems(
                         new PrimaryDrawerItem().withName(getString(R.string.About)).withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
+                        new PrimaryDrawerItem().withName(getString(R.string.Language)).withIcon(getResources().getDrawable(R.drawable.language_switch_ic)).withIdentifier(3).withSelectable(false),
                         new SecondaryDrawerItem().withName(getString(R.string.LogOut)).withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
                 ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
@@ -166,6 +170,52 @@ public class TaskActivity extends AppCompatActivity {
 
                                 //Clicked LogOut
 
+                            } else if (drawerItem.getIdentifier() == 3) {
+
+                                SharedPreferences sp = getSharedPreferences("LangPref", Activity.MODE_PRIVATE);
+                                int selection = sp.getInt("LanguageSelect", -1);
+                                AlertDialog.Builder builder = new AlertDialog.Builder(TaskActivity.this);
+                                CharSequence[] array = {"English", "Japanese"};
+                                builder.setTitle("Select Language")
+                                        .setSingleChoiceItems(array, selection, new DialogInterface.OnClickListener() {
+
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+
+                                                if (which == 1) {
+                                                    String lang = "ja";
+                                                    pref.SavePreferences("Language", lang);
+                                                    SharedPreferences.Editor editor = prefNew.edit();
+                                                    editor.putInt("LanguageSelect", which);
+                                                    editor.commit();
+                                                    changeLang(lang);
+                                                } else {
+                                                    String lang = "en";
+                                                    pref.SavePreferences("Language", lang);
+                                                    SharedPreferences.Editor editor = prefNew.edit();
+                                                    editor.putInt("LanguageSelect", which);
+                                                    editor.commit();
+                                                    changeLang(lang);
+                                                }
+                                            }
+                                        })
+
+                                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int id) {
+                                                // User clicked OK, so save the result somewhere
+
+                                            }
+                                        })
+                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int id) {
+
+                                            }
+                                        });
+
+                                builder.create();
+                                builder.show();
                             }
                         }
                         return false;
@@ -219,8 +269,8 @@ public class TaskActivity extends AppCompatActivity {
         comments_text.setText(comments_st);
         dsc_text.setText(desc_st);
 
-        File f = new File(Environment.getExternalStorageDirectory().getPath() + "/WorkerAudio/SubTask"+taskid_st+".mp3");
-        if(!f.exists()) {
+        File f = new File(Environment.getExternalStorageDirectory().getPath() + "/WorkerAudio/SubTask" + taskid_st + ".mp3");
+        if (!f.exists()) {
             downloadAudio();
         }
 
@@ -231,10 +281,14 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                if(imgPreview.getDrawable() != null) {
 
-                final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
-                Bitmap temp = getResizedBitmap(bitmap, 260, 260);
-                encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
+                    final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+                    Bitmap temp = getResizedBitmap(bitmap, 260, 260);
+                    encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
+                }else{
+                    Toast.makeText(TaskActivity.this,"No Attachment",Toast.LENGTH_SHORT).show();
+                }
 //                encodedImage = resizeBase64Image(temp);
 //                encodedImage = getString(R.string.audioEncode);
 
@@ -296,6 +350,25 @@ public class TaskActivity extends AppCompatActivity {
                 captureImage();
             }
         });
+    }
+
+    public void changeLang(String lang) {
+
+        if (lang.equalsIgnoreCase(""))
+            return;
+        Locale myLocale = new Locale(lang);
+//        saveLocale(lang);
+        Locale.setDefault(myLocale);
+        android.content.res.Configuration config = new android.content.res.Configuration();
+        config.locale = myLocale;
+        getBaseContext().getResources().updateConfiguration(config, getBaseContext().getResources().getDisplayMetrics());
+        updateTexts();
+    }
+
+    private void updateTexts() {
+
+        Intent i = new Intent(TaskActivity.this, TaskActivity.class);
+        startActivity(i);
     }
 
     private void downloadAudio() {
@@ -552,8 +625,8 @@ public class TaskActivity extends AppCompatActivity {
                         .key("IsSubTask").value(true)
                         .key("File").value(encodedImage)
                         .key("FileType").value("jpg")
-                        .key("ModifiedBy").value(userId_st)
-                        .key("CreatedBy").value(userId_st)
+                        .key("ModifiedBy").value(1)
+                        .key("CreatedBy").value(1)
                         .endObject()
                         .endObject();
             } catch (JSONException e) {
@@ -665,7 +738,7 @@ public class TaskActivity extends AppCompatActivity {
                             .key("ModifiedDateStr").value(current_time)
                             .key("EndDateStr").value(end_date)
                             .key("AssignedById").value(assignedBy)
-                            .key("StatusId").value(4)
+                            .key("StatusId").value(3)
                             .key("IsSubTask").value(1)
                             .key("Comments").value(comments_post)
                             .key("CreatedBy").value(createdBy_st)
@@ -865,15 +938,15 @@ public class TaskActivity extends AppCompatActivity {
         protected Void doInBackground(Void... params) {
 
             HashMap<String, Object> taskMap = new HashMap<String, Object>();
-            taskMap.put("CheckList", "item1");
+            taskMap.put("CheckList", "Weld Height <= 2cm");
             dataList.add(taskMap);
 
             HashMap<String, Object> taskMap2 = new HashMap<String, Object>();
-            taskMap2.put("CheckList", "item2");
+            taskMap2.put("CheckList", "Weld Lenght <= 10cm");
             dataList.add(taskMap2);
 
             HashMap<String, Object> taskMap3 = new HashMap<String, Object>();
-            taskMap3.put("CheckList", "item3");
+            taskMap3.put("CheckList", "Weld Material");
             dataList.add(taskMap3);
 
             return null;

@@ -26,7 +26,7 @@
         <activity android:name=".LoginActivity" />
         <activity
             android:name=".SplashActivity"
-            android:label="Worker EagleXpetize">
+            android:label="Operator EagleXpetize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

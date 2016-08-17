@@ -1,9 +1,12 @@
 package com.example.mridul_xpetize.worker;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -70,6 +73,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import android.support.v7.app.AppCompatActivity;
@@ -103,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
     String start_og, end_og, createdDate;
     CustomAdapter cardAdapter;
     SwipeRefreshLayout swipe;
+    SharedPreferences prefNew;
 
     int count;
     ListView hidden_not;
@@ -125,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Initialize
         notiList = new ArrayList<>();
+        prefNew = getSharedPreferences("LangPref", Activity.MODE_PRIVATE);
         swipe = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_camera);
         main_rel = (RelativeLayout) findViewById(R.id.main_layout);
@@ -203,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
                 .withDisplayBelowStatusBar(true)
                 .addDrawerItems(
                         new PrimaryDrawerItem().withName(getString(R.string.About)).withIcon(getResources().getDrawable(R.drawable.ic_about)).withIdentifier(1).withSelectable(false),
+                        new PrimaryDrawerItem().withName(getString(R.string.Language)).withIcon(getResources().getDrawable(R.drawable.language_switch_ic)).withIdentifier(3).withSelectable(false),
                         new SecondaryDrawerItem().withName(getString(R.string.LogOut)).withIcon(getResources().getDrawable(R.drawable.ic_logout)).withIdentifier(2).withSelectable(false)
                 ).withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
@@ -217,6 +224,52 @@ public class MainActivity extends AppCompatActivity {
 
                                 //Clicked LogOut
 
+                            }else if(drawerItem.getIdentifier() == 3){
+
+                                SharedPreferences sp = getSharedPreferences("LangPref", Activity.MODE_PRIVATE);
+                                int selection = sp.getInt("LanguageSelect", -1);
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                CharSequence[] array = {"English", "Japanese"};
+                                builder.setTitle("Select Language")
+                                        .setSingleChoiceItems(array, selection, new DialogInterface.OnClickListener() {
+
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which) {
+
+                                                if (which == 1) {
+                                                    String lang = "ja";
+                                                    pref.SavePreferences("Language", lang);
+                                                    SharedPreferences.Editor editor = prefNew.edit();
+                                                    editor.putInt("LanguageSelect", which);
+                                                    editor.commit();
+                                                    changeLang(lang);
+                                                }else{
+                                                    String lang = "en";
+                                                    pref.SavePreferences("Language", lang);
+                                                    SharedPreferences.Editor editor = prefNew.edit();
+                                                    editor.putInt("LanguageSelect", which);
+                                                    editor.commit();
+                                                    changeLang(lang);
+                                                }
+                                            }
+                                        })
+
+                                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int id) {
+                                                // User clicked OK, so save the result somewhere
+
+                                            }
+                                        })
+                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int id) {
+
+                                            }
+                                        });
+
+                                builder.create();
+                                builder.show();
                             }
                         }
                         return false;
@@ -275,53 +328,73 @@ public class MainActivity extends AppCompatActivity {
 
 
         //Initializing our broadcast receiver
-        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+//        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+//
+//            //When the broadcast received
+//            //We are sending the broadcast from GCMRegistrationIntentService
+//
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                //If the broadcast has received with success
+//                //that means device is registered successfully
+//                if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_SUCCESS)) {
+//                    //Getting the registration token from the intent
+//                    String token = intent.getStringExtra("token");
+//                    //Displaying the token as toast
+////                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
+//
+//                    //if the intent is not with success then displaying error messages
+//                } else if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_ERROR)) {
+//                    Toast.makeText(getApplicationContext(), "GCM registration error!", Toast.LENGTH_LONG).show();
+//                } else {
+//                    Toast.makeText(getApplicationContext(), "Error occurred", Toast.LENGTH_LONG).show();
+//                }
+//            }
+//        };
+//
+//        //Checking play service is available or not
+//        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
+//
+//        //if play service is not available
+//        if (ConnectionResult.SUCCESS != resultCode) {
+//            //If play service is supported but not installed
+//            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+//                //Displaying message that play service is not installed
+//                Toast.makeText(getApplicationContext(), getString(R.string.GPNotEnabled), Toast.LENGTH_LONG).show();
+//                GooglePlayServicesUtil.showErrorNotification(resultCode, getApplicationContext());
+//
+//                //If play service is not supported
+//                //Displaying an error message
+//            } else {
+//                Toast.makeText(getApplicationContext(), getString(R.string.GPNotSupported), Toast.LENGTH_LONG).show();
+//            }
+//
+//            //If play service is available
+//        } else {
+//            //Starting intent to register device
+//            Intent intent = new Intent(this, GCMRegistrationIntentService.class);
+//            startService(intent);
+//        }
+    }
 
-            //When the broadcast received
-            //We are sending the broadcast from GCMRegistrationIntentService
 
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                //If the broadcast has received with success
-                //that means device is registered successfully
-                if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_SUCCESS)) {
-                    //Getting the registration token from the intent
-                    String token = intent.getStringExtra("token");
-                    //Displaying the token as toast
-//                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
+    public void changeLang(String lang) {
 
-                    //if the intent is not with success then displaying error messages
-                } else if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_ERROR)) {
-                    Toast.makeText(getApplicationContext(), "GCM registration error!", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Error occurred", Toast.LENGTH_LONG).show();
-                }
-            }
-        };
+        if (lang.equalsIgnoreCase(""))
+            return;
+        Locale myLocale = new Locale(lang);
+//        saveLocale(lang);
+        Locale.setDefault(myLocale);
+        android.content.res.Configuration config = new android.content.res.Configuration();
+        config.locale = myLocale;
+        getBaseContext().getResources().updateConfiguration(config, getBaseContext().getResources().getDisplayMetrics());
+        updateTexts();
+    }
 
-        //Checking play service is available or not
-        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
+    private void updateTexts() {
 
-        //if play service is not available
-        if (ConnectionResult.SUCCESS != resultCode) {
-            //If play service is supported but not installed
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                //Displaying message that play service is not installed
-                Toast.makeText(getApplicationContext(), getString(R.string.GPNotEnabled), Toast.LENGTH_LONG).show();
-                GooglePlayServicesUtil.showErrorNotification(resultCode, getApplicationContext());
-
-                //If play service is not supported
-                //Displaying an error message
-            } else {
-                Toast.makeText(getApplicationContext(), getString(R.string.GPNotSupported), Toast.LENGTH_LONG).show();
-            }
-
-            //If play service is available
-        } else {
-            //Starting intent to register device
-            Intent intent = new Intent(this, GCMRegistrationIntentService.class);
-            startService(intent);
-        }
+        Intent i = new Intent(MainActivity.this, MainActivity.class);
+        startActivity(i);
     }
 
     //Registering receiver on activity resume
@@ -442,7 +515,7 @@ public class MainActivity extends AppCompatActivity {
 
             String user_id = pref.GetPreferences("UserId");
 
-            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/TaskAssigned");
+            HttpPost request = new HttpPost("http://vikray.in/EagleXpetizeService.svc/TaskAssigned");
             request.setHeader("Accept", "application/json");
             request.setHeader("Content-type", "application/json");
 
