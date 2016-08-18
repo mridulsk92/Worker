@@ -282,7 +282,6 @@ public class TaskActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if(imgPreview.getDrawable() != null) {
-
                     final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
                     Bitmap temp = getResizedBitmap(bitmap, 260, 260);
                     encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
