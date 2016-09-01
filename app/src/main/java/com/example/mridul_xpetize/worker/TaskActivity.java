@@ -114,6 +114,8 @@ public class TaskActivity extends AppCompatActivity {
     ListView subtask_list, checklist;
 
     ArrayList<HashMap<String, Object>> dataList;
+    ArrayList<HashMap<String, Object>> checkListData;
+
     List<String> checkedStrings = new ArrayList<String>();
     int k = 0;
     int count = 0;
@@ -260,6 +262,7 @@ public class TaskActivity extends AppCompatActivity {
         priority_txt = (TextView) findViewById(R.id.priority);
         dsc_text = (TextView) findViewById(R.id.SubDesc);
         dataList = new ArrayList<HashMap<String, Object>>();
+        checkListData = new ArrayList<HashMap<String, Object>>();
 //        subtask_list = (ListView) findViewById(R.id.listView_checklist);
         submit = (Button) findViewById(R.id.button_submit);
         desc = (TextView) findViewById(R.id.desc);
@@ -282,14 +285,14 @@ public class TaskActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if(imgPreview.getDrawable() != null) {
+
                     final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
                     Bitmap temp = getResizedBitmap(bitmap, 260, 260);
                     encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
+
                 }else{
                     Toast.makeText(TaskActivity.this,"No Attachment",Toast.LENGTH_SHORT).show();
                 }
-//                encodedImage = resizeBase64Image(temp);
-//                encodedImage = getString(R.string.audioEncode);
 
                 count = checklist.getCount();
                 for (int j = 0; j < dataList.size(); j++) {
@@ -916,7 +919,7 @@ public class TaskActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
-            viewHolder.checkBox.setText(dataList.get(position).get("CheckList").toString());
+            viewHolder.checkBox.setText(checkListData.get(position).get("ItemListString").toString());
             return convertView;
         }
     }
@@ -936,17 +939,50 @@ public class TaskActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
 
-            HashMap<String, Object> taskMap = new HashMap<String, Object>();
-            taskMap.put("CheckList", "Weld Height <= 2cm");
-            dataList.add(taskMap);
+            // Creating service handler class instance
+            ServiceHandler sh = new ServiceHandler();
 
-            HashMap<String, Object> taskMap2 = new HashMap<String, Object>();
-            taskMap2.put("CheckList", "Weld Lenght <= 10cm");
-            dataList.add(taskMap2);
+            //Url with parameters
+            String url = getString(R.string.url) + "EagleXpetizeService.svc/CheckLists/" +taskid_st;
 
-            HashMap<String, Object> taskMap3 = new HashMap<String, Object>();
-            taskMap3.put("CheckList", "Weld Material");
-            dataList.add(taskMap3);
+            // Making a request to url and get response
+            String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
+            Log.d("url", url);
+            Log.d("Response: ", "> " + jsonStr);
+
+            if (jsonStr != null) {
+
+                try {
+
+                    JSONArray tasks = new JSONArray(jsonStr);
+
+                    for (int i = 0; i < tasks.length(); i++) {
+                        JSONObject c = tasks.getJSONObject(i);
+
+                        String id = c.getString("TaskId");
+                        String createdBy = c.getString("CreatedBy");
+                        String modifiedBy = c.getString("ModifiedBy");
+                        String item = c.getString("ItemListString");
+                        String isSubTask = c.getString("IsSubTask");
+                        String checked = c.getString("Checked");
+
+                        // adding each child node to HashMap key => value
+                        HashMap<String, Object> taskMap = new HashMap<String, Object>();
+                        taskMap.put("TaskId", id);
+                        taskMap.put("CreatedBy", createdBy);
+                        taskMap.put("ModifiedBy", modifiedBy);
+                        taskMap.put("ItemListString", item);
+                        taskMap.put("IsSubTask", isSubTask);
+                        taskMap.put("Checked", checked);
+                        checkListData.add(taskMap);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Log.e("ServiceHandler", "Couldn't get any data from the url");
+            }
+
 
             return null;
         }
@@ -957,7 +993,7 @@ public class TaskActivity extends AppCompatActivity {
             if (pDialog.isShowing())
                 pDialog.dismiss();
 
-            CustomAdapter cardAdapter = new CustomAdapter(TaskActivity.this, R.layout.checklist, dataList);
+            CustomAdapter cardAdapter = new CustomAdapter(TaskActivity.this, R.layout.checklist, checkListData);
             checklist.setAdapter(cardAdapter);
         }
     }
@@ -1171,16 +1207,11 @@ public class TaskActivity extends AppCompatActivity {
             if (response_json == 200) {
                 Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
                 Intent i = new Intent(TaskActivity.this, MainActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(i);
             } else {
                 Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
             }
         }
     }
-
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        super.finish();
-//    }
 }

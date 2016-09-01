@@ -515,7 +515,7 @@ public class MainActivity extends AppCompatActivity {
 
             String user_id = pref.GetPreferences("UserId");
 
-            HttpPost request = new HttpPost("http://vikray.in/EagleXpetizeService.svc/TaskAssigned");
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/TaskAssigned");
             request.setHeader("Accept", "application/json");
             request.setHeader("Content-type", "application/json");
 

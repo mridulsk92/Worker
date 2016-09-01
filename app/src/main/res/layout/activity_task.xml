@@ -138,45 +138,44 @@
         android:id="@+id/listView_checklist"
         android:layout_width="fill_parent"
         android:layout_height="100dp"
-        android:layout_above="@+id/textView2"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/subTask_details"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
-        android:layout_marginTop="5dp" />
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="2dp"
+        android:layout_above="@+id/textView2" />
 
     <ImageView
         android:id="@+id/imageView_attachment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/button_submit"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="6dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:layout_margin="2dp"
+        android:layout_above="@+id/button_submit" />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/imageView_attachment"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="2dp"
         android:text="@string/Attachments"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:layout_above="@+id/imageView_attachment"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 
     <ImageButton
         android:id="@+id/imageButton_camera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/imageView_attachment"
-        android:layout_toEndOf="@+id/textView2"
-        android:layout_toRightOf="@+id/textView2"
         android:background="@null"
-        android:src="@drawable/camera_ic" />
+        android:layout_margin="2dp"
+        android:src="@drawable/camera_ic"
+        android:layout_alignTop="@+id/textView2"
+        android:layout_toRightOf="@+id/textView2"
+        android:layout_toEndOf="@+id/textView2" />
 
     <Button
         android:id="@+id/button_encode"
