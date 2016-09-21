@@ -34,44 +34,18 @@
             </intent-filter>
         </activity>
 
-        <!-- GCM Receiver -->
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND">
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-
-                <category android:name="com.gnirt69.gcmexample" />
-            </intent-filter>
-        </receiver>
-
-        <!-- GCM Receiver Service -->
         <service
-            android:name=".GCMPushReceiverService"
-            android:exported="false">
+            android:name=".MyFirebaseMessagingService">
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
 
-        <!-- GCM Registration Intent Service -->
-        <service
-            android:name=".GCMRegistrationIntentService"
-            android:exported="false">
+        <service android:name=".MyFirebaseInstanceIdService">
             <intent-filter>
-                <action android:name="com.google.android.gms.iid.InstanceID" />
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>
         </service>
-
-        <receiver
-            android:name=".NetworkReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            </intent-filter>
-        </receiver>
 
         <service
             android:name=".PostService"

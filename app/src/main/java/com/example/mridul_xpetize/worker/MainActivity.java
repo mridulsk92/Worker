@@ -89,13 +89,11 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 
 public class MainActivity extends AppCompatActivity {
 
     ListView tasks_list;
-    ProgressDialog pDialog, pDialogN;
+    ProgressDialog pDialog, pDialogN, pDialogT;
     PreferencesHelper pref;
     private Drawer result = null;
     LayoutInflater inflater;
@@ -224,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 //Clicked LogOut
 
-                            }else if(drawerItem.getIdentifier() == 3){
+                            } else if (drawerItem.getIdentifier() == 3) {
 
                                 SharedPreferences sp = getSharedPreferences("LangPref", Activity.MODE_PRIVATE);
                                 int selection = sp.getInt("LanguageSelect", -1);
@@ -243,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
                                                     editor.putInt("LanguageSelect", which);
                                                     editor.commit();
                                                     changeLang(lang);
-                                                }else{
+                                                } else {
                                                     String lang = "en";
                                                     pref.SavePreferences("Language", lang);
                                                     SharedPreferences.Editor editor = prefNew.edit();
@@ -287,6 +285,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 //Get TextView values and assign to String
+                String name = ((TextView) view.findViewById(R.id.subName)).getText().toString();
                 String desc = ((TextView) view.findViewById(R.id.desc)).getText().toString();
                 String details_id = ((TextView) view.findViewById(R.id.details_id)).getText().toString();
                 String assignedBy = ((TextView) view.findViewById(R.id.assignedBy)).getText().toString();
@@ -307,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
 //                i.putExtra("jobOrder", jobOrder);
 //                i.putExtra("start", start_og);
 //                i.putExtra("end", end_og);
+                i.putExtra("SubName", name);
                 i.putExtra("TaskDetailsId", details_id);
                 i.putExtra("task_id", taskId);
                 i.putExtra("AssignedByName", assignedByName);
@@ -326,57 +326,84 @@ public class MainActivity extends AppCompatActivity {
 
         new GetNotiList().execute();
 
-
-        //Initializing our broadcast receiver
-//        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
-//
-//            //When the broadcast received
-//            //We are sending the broadcast from GCMRegistrationIntentService
-//
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                //If the broadcast has received with success
-//                //that means device is registered successfully
-//                if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_SUCCESS)) {
-//                    //Getting the registration token from the intent
-//                    String token = intent.getStringExtra("token");
-//                    //Displaying the token as toast
-////                    Toast.makeText(getApplicationContext(), "Registration token:" + token, Toast.LENGTH_LONG).show();
-//
-//                    //if the intent is not with success then displaying error messages
-//                } else if (intent.getAction().equals(GCMRegistrationIntentService.REGISTRATION_ERROR)) {
-//                    Toast.makeText(getApplicationContext(), "GCM registration error!", Toast.LENGTH_LONG).show();
-//                } else {
-//                    Toast.makeText(getApplicationContext(), "Error occurred", Toast.LENGTH_LONG).show();
-//                }
-//            }
-//        };
-//
-//        //Checking play service is available or not
-//        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getApplicationContext());
-//
-//        //if play service is not available
-//        if (ConnectionResult.SUCCESS != resultCode) {
-//            //If play service is supported but not installed
-//            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-//                //Displaying message that play service is not installed
-//                Toast.makeText(getApplicationContext(), getString(R.string.GPNotEnabled), Toast.LENGTH_LONG).show();
-//                GooglePlayServicesUtil.showErrorNotification(resultCode, getApplicationContext());
-//
-//                //If play service is not supported
-//                //Displaying an error message
-//            } else {
-//                Toast.makeText(getApplicationContext(), getString(R.string.GPNotSupported), Toast.LENGTH_LONG).show();
-//            }
-//
-//            //If play service is available
-//        } else {
-//            //Starting intent to register device
-//            Intent intent = new Intent(this, GCMRegistrationIntentService.class);
-//            startService(intent);
-//        }
+        new AddToken().execute();
     }
 
+
+    private class AddToken extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialogT = new ProgressDialog(MainActivity.this);
+            pDialogT.setMessage("Please wait...");
+            pDialogT.setCancelable(false);
+            pDialogT.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+
+            String token = pref.GetPreferences("FCM TOKEN");
+            String userid = pref.GetPreferences("UserId");
+
+            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/AddTokenNew");
+//            HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/AddToken");
+
+            request.setHeader("Accept", "application/json");
+            request.setHeader("Content-type", "application/json");
+
+            // Build JSON string
+            JSONStringer userJson = null;
+            try {
+                userJson = new JSONStringer()
+                        .object()
+                        .key("TkDtl")
+                        .object()
+                        .key("UserId").value(userid)
+                        .key("Token").value(token)
+                        .endObject()
+                        .endObject();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
+            Log.d("Json", String.valueOf(userJson));
+            StringEntity entity = null;
+            try {
+                entity = new StringEntity(userJson.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            entity.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            entity.setContentType("application/json");
+
+            request.setEntity(entity);
+
+            // Send request to WCF service
+            DefaultHttpClient httpClient = new DefaultHttpClient();
+            try {
+                ResponseHandler<String> responseHandler = new BasicResponseHandler();
+                String response = httpClient.execute(request, responseHandler);
+                Log.d("res", response);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            if (pDialogT.isShowing())
+                pDialogT.dismiss();
+        }
+    }
 
     public void changeLang(String lang) {
 
@@ -395,17 +422,6 @@ public class MainActivity extends AppCompatActivity {
 
         Intent i = new Intent(MainActivity.this, MainActivity.class);
         startActivity(i);
-    }
-
-    //Registering receiver on activity resume
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.w("MainActivity", "onResume");
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
-                new IntentFilter(GCMRegistrationIntentService.REGISTRATION_SUCCESS));
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
-                new IntentFilter(GCMRegistrationIntentService.REGISTRATION_ERROR));
     }
 
     //Unregistering receiver on activity paused

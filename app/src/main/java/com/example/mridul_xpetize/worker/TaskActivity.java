@@ -107,6 +107,7 @@ public class TaskActivity extends AppCompatActivity {
     ImageButton click;
     String encodedImage;
     Button encodeButton;
+    String taskName;
 
     int pos, response_json;
 
@@ -235,6 +236,7 @@ public class TaskActivity extends AppCompatActivity {
 
         //Get Intent
         Intent i = getIntent();
+        taskName = i.getStringExtra("SubName");
         assignedByName = i.getStringExtra("AssignedByName");
         assignedBy = i.getStringExtra("assignedBy");
         status_st = i.getStringExtra("statusId");
@@ -834,12 +836,12 @@ public class TaskActivity extends AppCompatActivity {
             if (response_json == 200) {
                 if (result.equals("Pending")) {
                     Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
-                    new PostNotification().execute("Pending");
-                    new PostHistory().execute("Pending");
+                    new PostNotification().execute("Submitted");
+//                    new PostHistory().execute("Pending");
                 } else {
                     Toast.makeText(TaskActivity.this, getString(R.string.Success), Toast.LENGTH_SHORT).show();
-                    new PostNotification().execute("Completed");
-                    new PostHistory().execute("Completed");
+                    new PostNotification().execute("Submitted");
+//                    new PostHistory().execute("Completed");
                 }
             } else {
                 Toast.makeText(TaskActivity.this, getString(R.string.Failed), Toast.LENGTH_SHORT).show();
@@ -1015,8 +1017,9 @@ public class TaskActivity extends AppCompatActivity {
         protected Void doInBackground(String... params) {
 
             String status = params[0];
-
+            String username = pref.GetPreferences("UserName");
             userId_st = pref.GetPreferences("UserId");
+            String noti_message = username + " has "+status+ " the task : "+ taskName;
 
             HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/NewNotification");
             request.setHeader("Accept", "application/json");
@@ -1029,7 +1032,7 @@ public class TaskActivity extends AppCompatActivity {
                         .object()
                         .key("notification")
                         .object()
-                        .key("Description").value(status)
+                        .key("Description").value(noti_message)
                         .key("TaskId").value(taskid_st)
                         .key("ById").value(userId_st)
                         .key("ToId").value(assignedBy)

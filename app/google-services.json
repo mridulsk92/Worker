@@ -1,20 +1,27 @@
 {
   "project_info": {
-    "project_number": "346338798252",
-    "project_id": "eaglexpetize-worker"
+    "project_number": "193637113157",
+    "firebase_url": "https://eaglexpetize.firebaseio.com",
+    "project_id": "eaglexpetize",
+    "storage_bucket": "eaglexpetize.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:346338798252:android:4bfc693de118095c",
+        "mobilesdk_app_id": "1:193637113157:android:dd4117b0aba53b39",
         "android_client_info": {
-          "package_name": "com.example.mridul_xpetize.worker"
+          "package_name": "com.example.mridul_xpetize.supervisor"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "193637113157-s5vg8k3casjbrv0phl6fs49dvi6eqgpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAiAzr8wI-K4KwCEH6CgbmQtsA40frtNH8"
+          "current_key": "AIzaSyD6XQ13igOzC7V2gYbPeO-J78COtiwBc-0"
         }
       ],
       "services": {
@@ -26,7 +33,69 @@
           "other_platform_oauth_client": []
         },
         "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:193637113157:android:b517145acfae5abc",
+        "android_client_info": {
+          "package_name": "com.example.mridul_xpetize.test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "193637113157-s5vg8k3casjbrv0phl6fs49dvi6eqgpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6XQ13igOzC7V2gYbPeO-J78COtiwBc-0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
           "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:193637113157:android:4bfc693de118095c",
+        "android_client_info": {
+          "package_name": "com.example.mridul_xpetize.worker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "193637113157-s5vg8k3casjbrv0phl6fs49dvi6eqgpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6XQ13igOzC7V2gYbPeO-J78COtiwBc-0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
         }
       }
     }
