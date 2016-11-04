@@ -6,24 +6,16 @@
     android:padding="5dp"
     android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingLeft="3dp"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Medium Text"
-        android:id="@+id/textview_noti" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="3dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="By"
-        android:textSize="10sp"
-        android:id="@+id/noti_by" />
+        android:text="Description"
+        android:visibility="visible"
+        android:textSize="12sp"
+        android:id="@+id/description_notification" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -31,8 +23,18 @@
         android:paddingLeft="3dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="TaskName"
+        android:visibility="gone"
         android:textSize="10sp"
-        android:id="@+id/noti_task" />
+        android:id="@+id/intent_notification" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="3dp"
+        android:visibility="gone"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Read"
+        android:id="@+id/read_notification" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -41,6 +43,6 @@
         android:visibility="gone"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Medium Text"
-        android:id="@+id/textview_isRead" />
+        android:id="@+id/rowId_notification" />
 
 </LinearLayout>

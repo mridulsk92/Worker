@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLayoutTask"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.mridul_xpetize.worker.TaskActivity">
@@ -138,44 +139,44 @@
         android:id="@+id/listView_checklist"
         android:layout_width="fill_parent"
         android:layout_height="100dp"
+        android:layout_above="@+id/textView2"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/subTask_details"
+        android:layout_marginBottom="2dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="2dp"
-        android:layout_above="@+id/textView2" />
+        android:layout_marginTop="5dp" />
 
     <ImageView
         android:id="@+id/imageView_attachment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
+        android:layout_above="@+id/button_submit"
         android:layout_margin="2dp"
-        android:layout_above="@+id/button_submit" />
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/Attachments"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textStyle="bold"
         android:layout_above="@+id/imageView_attachment"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:text="@string/Attachments"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textStyle="bold" />
 
     <ImageButton
         android:id="@+id/imageButton_camera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@null"
-        android:layout_margin="2dp"
-        android:src="@drawable/camera_ic"
         android:layout_alignTop="@+id/textView2"
+        android:layout_margin="2dp"
+        android:layout_toEndOf="@+id/textView2"
         android:layout_toRightOf="@+id/textView2"
-        android:layout_toEndOf="@+id/textView2" />
+        android:background="@null"
+        android:src="@drawable/camera_ic" />
 
     <Button
         android:id="@+id/button_encode"
@@ -188,5 +189,15 @@
         android:text="Encode"
         android:visibility="gone" />
 
+    <ListView
+        android:id="@+id/listView_hidden_notification"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/toolbar"
+        android:layout_weight="1"
+        android:background="@color/white"
+        android:visibility="gone" />
 
 </RelativeLayout>

@@ -17,6 +17,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -46,11 +47,14 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.Task;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -108,6 +112,8 @@ public class TaskActivity extends AppCompatActivity {
     String encodedImage;
     Button encodeButton;
     String taskName;
+    MenuItem menuItem;
+    ListView hidden_not;
 
     int pos, response_json;
 
@@ -124,6 +130,10 @@ public class TaskActivity extends AppCompatActivity {
     private DownloadManager dm;
     SharedPreferences prefNew;
     Button playTask;
+    ArrayList<HashMap<String, Object>> notiList;
+    ProgressDialog pDialogN;
+    String db_rowId, db_desc, db_read, db_intent;
+    RelativeLayout main_layout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,6 +182,8 @@ public class TaskActivity extends AppCompatActivity {
                             } else if (drawerItem.getIdentifier() == 2) {
 
                                 //Clicked LogOut
+                                pref.SavePreferences("IsLoggedIn", "No");
+                                System.exit(0);
 
                             } else if (drawerItem.getIdentifier() == 3) {
 
@@ -254,6 +266,11 @@ public class TaskActivity extends AppCompatActivity {
         pos = i.getIntExtra("pos", -1);
 
         //Initialise
+        notiList = new ArrayList<>();
+        CardView task_details_card = (CardView) findViewById(R.id.subTask_details);
+        task_details_card.setBackgroundColor(Color.TRANSPARENT);
+        main_layout = (RelativeLayout) findViewById(R.id.mainLayoutTask);
+        hidden_not = (ListView) findViewById(R.id.listView_hidden_notification);
         playTask = (Button) findViewById(R.id.button_play);
         message_view = (TextView) findViewById(R.id.textView_message);
         encodeButton = (Button) findViewById(R.id.button_encode);
@@ -286,14 +303,14 @@ public class TaskActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if(imgPreview.getDrawable() != null) {
+                if (imgPreview.getDrawable() != null) {
 
                     final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
                     Bitmap temp = getResizedBitmap(bitmap, 260, 260);
                     encodedImage = encodeToBase64(temp, Bitmap.CompressFormat.JPEG, 50);
 
-                }else{
-                    Toast.makeText(TaskActivity.this,"No Attachment",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(TaskActivity.this, "No Attachment", Toast.LENGTH_SHORT).show();
                 }
 
                 count = checklist.getCount();
@@ -329,6 +346,42 @@ public class TaskActivity extends AppCompatActivity {
             }
         });
 
+        //hide notification list when clicked on layout
+        main_layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (hidden_not.getVisibility() == View.VISIBLE) {
+                    hidden_not.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        //Notification List onClick
+        hidden_not.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                count--;
+                if (count <= 0) {
+                    count = 0;
+                }
+
+                String rowId = ((TextView) view.findViewById(R.id.rowId_notification)).getText().toString();
+                String intent = ((TextView) view.findViewById(R.id.intent_notification)).getText().toString();
+                String description = ((TextView) view.findViewById(R.id.description_notification)).getText().toString();
+
+                SQLite entry = new SQLite(getApplicationContext());
+                entry.open();
+                entry.updateEntryNotification(rowId, description, "Yes", intent);
+                entry.close();
+
+                menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
+                parent.getChildAt(position - hidden_not.getFirstVisiblePosition()).setBackgroundColor(Color.TRANSPARENT);
+
+            }
+        });
+
         IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
@@ -345,6 +398,8 @@ public class TaskActivity extends AppCompatActivity {
         registerReceiver(receiver, filter);
 
         new GetCheckList().execute();
+
+        new GetNotiList().execute();
 
         //onClick of attachment view
         click.setOnClickListener(new View.OnClickListener() {
@@ -543,7 +598,7 @@ public class TaskActivity extends AppCompatActivity {
                         SQLite entry = new SQLite(TaskActivity.this);
                         entry.open();
                         entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, current_time, assignedBy, "4", "1", comments_post, createdBy_st);
-                        entry.createEntryNotification("Pending", taskid_st, userId_st, assignedBy, userId_st);
+//                        entry.createEntryNotification("Pending", taskid_st, userId_st, assignedBy, userId_st);
                         String count = entry.getCount();
                         String not_count = entry.getCountNotification();
                         Log.d("Count", count + "NotCount :" + not_count);
@@ -561,7 +616,7 @@ public class TaskActivity extends AppCompatActivity {
                         SQLite entry = new SQLite(TaskActivity.this);
                         entry.open();
                         entry.createEntry(details_st, taskid_st, userId_st, start_date, end_date, current_time, assignedBy, "3", "1", comments_post, createdBy_st);
-                        entry.createEntryNotification("Completed", taskid_st, userId_st, assignedBy, userId_st);
+//                        entry.createEntryNotification("Completed", taskid_st, userId_st, assignedBy, userId_st);
                         String count = entry.getCount();
                         String not_count = entry.getCountNotification();
                         Log.d("Count", count + "NotCount :" + not_count);
@@ -754,7 +809,6 @@ public class TaskActivity extends AppCompatActivity {
 
                 Log.d("Json", String.valueOf(userJson));
             } else {
-
                 // Build JSON string
                 try {
                     userJson = new JSONStringer()
@@ -856,36 +910,6 @@ public class TaskActivity extends AppCompatActivity {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public boolean onCreateOptionsMenu(Menu menu) {
-
-        //inflate menu
-        getMenuInflater().inflate(R.menu.menu_my, menu);
-
-        // Get the notifications MenuItem and LayerDrawable (layer-list)
-        MenuItem item_noti = menu.findItem(R.id.action_noti);
-        MenuItem item_logOut = menu.findItem(R.id.action_logOut);
-
-        item_logOut.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-
-
-                return false;
-            }
-        });
-
-        item_noti.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-
-
-                return false;
-            }
-        });
-
-        return true;
-    }
-
     private class CustomAdapter extends ArrayAdapter<HashMap<String, Object>> {
 
         public CustomAdapter(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
@@ -945,7 +969,7 @@ public class TaskActivity extends AppCompatActivity {
             ServiceHandler sh = new ServiceHandler();
 
             //Url with parameters
-            String url = getString(R.string.url) + "EagleXpetizeService.svc/CheckLists/" +taskid_st;
+            String url = getString(R.string.url) + "EagleXpetizeService.svc/CheckLists/" + taskid_st;
 
             // Making a request to url and get response
             String jsonStr = sh.makeServiceCall(url, ServiceHandler.GET);
@@ -1000,6 +1024,145 @@ public class TaskActivity extends AppCompatActivity {
         }
     }
 
+    private class CustomAdapterNot extends ArrayAdapter<HashMap<String, Object>> {
+
+        public CustomAdapterNot(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
+
+            //let android do the initializing :)
+            super(context, textViewResourceId, Strings);
+        }
+
+        //class for caching the views in a row
+        private class ViewHolder {
+
+            TextView desc, intent, read, rowId;
+            LinearLayout noti_linear;
+        }
+
+        //Initialise
+        ViewHolder viewHolder;
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            if (convertView == null) {
+
+                //inflate the custom layout
+                convertView = inflater.from(parent.getContext()).inflate(R.layout.notification_layout, parent, false);
+                viewHolder = new ViewHolder();
+
+                //cache the views
+                viewHolder.rowId = (TextView) convertView.findViewById(R.id.rowId_notification);
+                viewHolder.desc = (TextView) convertView.findViewById(R.id.description_notification);
+                viewHolder.noti_linear = (LinearLayout) convertView.findViewById(R.id.not_layout);
+                viewHolder.intent = (TextView) convertView.findViewById(R.id.intent_notification);
+                viewHolder.read = (TextView) convertView.findViewById(R.id.read_notification);
+
+                //link the cached views to the convertview
+                convertView.setTag(viewHolder);
+            } else
+                viewHolder = (ViewHolder) convertView.getTag();
+
+            //set the data to be displayed
+            viewHolder.rowId.setText(notiList.get(position).get("RowId").toString());
+            viewHolder.read.setText(notiList.get(position).get("Read").toString());
+            viewHolder.intent.setText(notiList.get(position).get("Intent").toString());
+            viewHolder.desc.setText(notiList.get(position).get("Description").toString());
+            viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
+
+            if (viewHolder.read.getText().equals("No")) {
+                viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
+            } else {
+                viewHolder.noti_linear.setBackgroundColor(Color.TRANSPARENT);
+            }
+//            for (int i = 0; i < savedList.size(); i++) {
+//                Log.d("Test Custom", String.valueOf(savedList.get(i)));
+//                if (position == savedList.get(i)) {
+//                    viewHolder.noti_linear.setBackgroundColor(Color.TRANSPARENT);
+//                } else {
+//                    viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
+//                }
+//            }
+
+            return convertView;
+        }
+    }
+
+    private class GetNotiList extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // Showing progress dialog
+            pDialogN = new ProgressDialog(TaskActivity.this);
+            pDialogN.setMessage(getString(R.string.pDialog_wait));
+            pDialogN.setCancelable(false);
+            pDialogN.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            SQLite notC = new SQLite(TaskActivity.this);
+            notC.open();
+            int countNot = Integer.parseInt(notC.getCountNotification());
+            notC.close();
+            Log.d("Service Count Not", String.valueOf(countNot));
+
+            if (countNot != 0) {
+                int i = 0;
+                int counter;
+                if (countNot < 5) {
+                    counter = countNot;
+                } else {
+                    counter = 5;
+                }
+                while (i < counter) {
+
+                    SQLite getNot = new SQLite(TaskActivity.this);
+                    getNot.open();
+                    String notData[][] = getNot.getNotification();
+                    db_rowId = notData[i][0];
+                    db_desc = notData[i][1];
+                    db_read = notData[i][2];
+                    db_intent = notData[i][3];
+                    getNot.close();
+                    Log.d("Test DEsc", db_desc + db_intent + db_read);
+
+                    HashMap<String, Object> taskMap = new HashMap<String, Object>();
+                    taskMap.put("RowId", db_rowId);
+                    taskMap.put("Description", db_desc);
+                    taskMap.put("Read", db_read);
+                    taskMap.put("Intent", db_intent);
+                    notiList.add(taskMap);
+                    i++;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            if (pDialogN.isShowing())
+                pDialogN.dismiss();
+
+            // initialize pop up window
+            for (int i = 0; i < notiList.size(); i++) {
+                if (notiList.get(i).get("Read").equals("No")) {
+                    count++;
+                }
+            }
+//            count = notiList.size();
+            CustomAdapterNot notAdapter = new CustomAdapterNot(TaskActivity.this, R.layout.notification_layout, notiList);
+            hidden_not.setAdapter(notAdapter);
+            menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
+
+        }
+    }
+
     private class PostNotification extends AsyncTask<String, Void, Void> {
 
         @Override
@@ -1019,7 +1182,7 @@ public class TaskActivity extends AppCompatActivity {
             String status = params[0];
             String username = pref.GetPreferences("UserName");
             userId_st = pref.GetPreferences("UserId");
-            String noti_message = username + " has "+status+ " the task : "+ taskName;
+            String noti_message = username + " has " + status + " the task : " + taskName;
 
             HttpPost request = new HttpPost(getString(R.string.url) + "EagleXpetizeService.svc/NewNotification");
             request.setHeader("Accept", "application/json");
@@ -1217,4 +1380,82 @@ public class TaskActivity extends AppCompatActivity {
             }
         }
     }
+
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        //inflate menu
+        getMenuInflater().inflate(R.menu.menu_my, menu);
+
+        menuItem = menu.findItem(R.id.testAction);
+        menuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                if (hidden_not.getVisibility() == View.VISIBLE) {
+                    hidden_not.setVisibility(View.GONE);
+                } else {
+                    hidden_not.setVisibility(View.VISIBLE);
+                }
+                return false;
+            }
+        });
+
+//        MenuItem item = menu.findItem(R.id.badge);
+//        MenuItemCompat.setActionView(item, R.layout.feed_update_count);
+//        View view = MenuItemCompat.getActionView(item);
+//        notifCount = (Button)view.findViewById(R.id.notif_count);
+//        notifCount.setText(String.valueOf(mNotifCount));
+//
+//        // Get the notifications MenuItem and LayerDrawable (layer-list)
+////        MenuItem item_noti = menu.findItem(R.id.action_noti);
+//        MenuItem item_logOut = menu.findItem(R.id.action_logOut);
+//
+//        item_logOut.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem item) {
+//
+//
+//                return false;
+//            }
+//        });
+//
+////        item_noti.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+////            @Override
+////            public boolean onMenuItemClick(MenuItem item) {
+////
+////                Intent i = new Intent(DashboardActivity.this, NotificationActivity.class);
+////                startActivity(i);
+////                return false;
+////            }
+////        });
+
+        return true;
+    }
+
+    private Drawable buildCounterDrawable(int count, int backgroundImageId) {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View view = inflater.inflate(R.layout.counter_menuitem_layout, null);
+        view.setBackgroundResource(backgroundImageId);
+
+        if (count == 0) {
+            View counterTextPanel = view.findViewById(R.id.rel_panel);
+            counterTextPanel.setVisibility(View.GONE);
+        } else {
+            TextView textView = (TextView) view.findViewById(R.id.count);
+            textView.setText("" + count);
+        }
+
+        view.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+
+        view.setDrawingCacheEnabled(true);
+        view.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+        Bitmap bitmap = Bitmap.createBitmap(view.getDrawingCache());
+        view.setDrawingCacheEnabled(false);
+
+        return new BitmapDrawable(getResources(), bitmap);
+    }
+
 }

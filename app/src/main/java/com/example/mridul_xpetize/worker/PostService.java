@@ -70,20 +70,20 @@ public class PostService extends Service {
             notC.close();
             Log.d("Service Count Not", String.valueOf(countNot));
 
-            for (int i = 0; i < countNot; i++) {
-
-                SQLite getNot = new SQLite(PostService.this);
-                getNot.open();
-                String notData[] = getNot.getNotificationRow();
-                db_desc = notData[1];
-                db_not_task = notData[2];
-                db_not_by = notData[3];
-                db_not_to = notData[4];
-                db_not_created = notData[5];
-                getNot.close();
-                new PostNotification().execute();
-
-            }
+//            for (int i = 0; i < countNot; i++) {
+//
+//                SQLite getNot = new SQLite(PostService.this);
+//                getNot.open();
+//                String notData[] = getNot.getNotificationRow();
+//                db_desc = notData[1];
+//                db_not_task = notData[2];
+//                db_not_by = notData[3];
+//                db_not_to = notData[4];
+//                db_not_created = notData[5];
+//                getNot.close();
+//                new PostNotification().execute();
+//
+//            }
         }
         for (int i = 0; i < count; i++) {
 
@@ -103,7 +103,6 @@ public class PostService extends Service {
             db_created = datas[11];
             getData.close();
             new PostTask().execute();
-
         }
     }
 
@@ -290,7 +289,7 @@ public class PostService extends Service {
             if (response_json == 200) {
                 Log.d("Not Service", "Success");
                 SQLite del = new SQLite(PostService.this);
-                del.deleteNotificationRow();
+                del.deleteNotificationRows();
                 del.close();
             } else {
                 Log.d("Not Service", "Failed");
@@ -311,4 +310,5 @@ public class PostService extends Service {
         // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
+
 }

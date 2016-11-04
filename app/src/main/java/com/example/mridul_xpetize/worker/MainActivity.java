@@ -89,7 +89,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-
 public class MainActivity extends AppCompatActivity {
 
     ListView tasks_list;
@@ -103,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<HashMap<String, Object>> dataList;
 
     String start_og, end_og, createdDate;
+    String db_desc, db_read, db_intent, db_rowId;
     CustomAdapter cardAdapter;
     SwipeRefreshLayout swipe;
     SharedPreferences prefNew;
@@ -111,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
     ListView hidden_not;
     ArrayList<HashMap<String, Object>> notiList;
     MenuItem menuItem;
+    int countNot;
     int click = 0;
 
     //Creating a broadcast receiver for gcm registration
@@ -179,11 +180,22 @@ public class MainActivity extends AppCompatActivity {
                     count = 0;
                 }
 
+                String rowId = ((TextView) view.findViewById(R.id.rowId_notification)).getText().toString();
+                String intent = ((TextView) view.findViewById(R.id.intent_notification)).getText().toString();
+                String description = ((TextView) view.findViewById(R.id.description_notification)).getText().toString();
+
+                SQLite entry = new SQLite(getApplicationContext());
+                entry.open();
+                entry.updateEntryNotification(rowId, description, "Yes", intent);
+                entry.close();
+
                 menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
                 parent.getChildAt(position - hidden_not.getFirstVisiblePosition()).setBackgroundColor(Color.TRANSPARENT);
 
             }
         });
+
+//        LoadNotification();
 
         //Get preference values
         pref = new PreferencesHelper(MainActivity.this);
@@ -221,6 +233,8 @@ public class MainActivity extends AppCompatActivity {
                             } else if (drawerItem.getIdentifier() == 2) {
 
                                 //Clicked LogOut
+                                pref.SavePreferences("IsLoggedIn","No");
+                                System.exit(0);
 
                             } else if (drawerItem.getIdentifier() == 3) {
 
@@ -324,11 +338,12 @@ public class MainActivity extends AppCompatActivity {
 
         new GetTaskList().execute();
 
-        new GetNotiList().execute();
+        new GetNotiListServer().execute();
+
+//        new GetNotiListLocal().execute();
 
         new AddToken().execute();
     }
-
 
     private class AddToken extends AsyncTask<Void, Void, Void> {
 
@@ -644,6 +659,7 @@ public class MainActivity extends AppCompatActivity {
             cardAdapter = new CustomAdapter(MainActivity.this, R.layout.task_list, dataList);
             tasks_list.setAdapter(cardAdapter);
 
+//            new GetNotiList().execute();
         }
     }
 
@@ -658,7 +674,7 @@ public class MainActivity extends AppCompatActivity {
         //class for caching the views in a row
         private class ViewHolder {
 
-            TextView not, isRead, byName, taskName;
+            TextView desc, intent, read, rowId;
             LinearLayout noti_linear;
         }
 
@@ -675,11 +691,11 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
-                viewHolder.taskName = (TextView) convertView.findViewById(R.id.noti_task);
-                viewHolder.byName = (TextView) convertView.findViewById(R.id.noti_by);
+                viewHolder.rowId = (TextView) convertView.findViewById(R.id.rowId_notification);
+                viewHolder.desc = (TextView) convertView.findViewById(R.id.description_notification);
                 viewHolder.noti_linear = (LinearLayout) convertView.findViewById(R.id.not_layout);
-                viewHolder.not = (TextView) convertView.findViewById(R.id.textview_noti);
-                viewHolder.isRead = (TextView) convertView.findViewById(R.id.textview_isRead);
+                viewHolder.intent = (TextView) convertView.findViewById(R.id.intent_notification);
+                viewHolder.read = (TextView) convertView.findViewById(R.id.read_notification);
 
                 //link the cached views to the convertview
                 convertView.setTag(viewHolder);
@@ -687,11 +703,17 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = (ViewHolder) convertView.getTag();
 
             //set the data to be displayed
-            viewHolder.byName.setText(notiList.get(position).get("UserName").toString());
-            viewHolder.taskName.setText(notiList.get(position).get("TaskName").toString());
-            viewHolder.not.setText(notiList.get(position).get("Description").toString());
+            viewHolder.rowId.setText(notiList.get(position).get("RowId").toString());
+            viewHolder.read.setText(notiList.get(position).get("Read").toString());
+            viewHolder.intent.setText(notiList.get(position).get("Intent").toString());
+            viewHolder.desc.setText(notiList.get(position).get("Description").toString());
             viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
 
+            if (viewHolder.read.getText().equals("No")) {
+                viewHolder.noti_linear.setBackgroundColor(Color.LTGRAY);
+            } else {
+                viewHolder.noti_linear.setBackgroundColor(Color.TRANSPARENT);
+            }
 //            for (int i = 0; i < savedList.size(); i++) {
 //                Log.d("Test Custom", String.valueOf(savedList.get(i)));
 //                if (position == savedList.get(i)) {
@@ -705,19 +727,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class GetNotiList extends AsyncTask<Void, Void, Void> {
+    private class GetNotiListServer extends AsyncTask<Void, Void, Void> {
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            dataList.clear();
-            // Showing progress dialog
-            pDialogN = new ProgressDialog(MainActivity.this);
-            pDialogN.setMessage(getString(R.string.pDialog_wait));
-            pDialogN.setCancelable(false);
-            pDialogN.show();
-        }
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//
+//            dataList.clear();
+//            // Showing progress dialog
+//            pDialog = new ProgressDialog(MainActivity.this);
+//            pDialog.setMessage("Please wait...");
+//            pDialog.setCancelable(true);
+//            pDialog.show();
+//        }
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -735,6 +757,11 @@ public class MainActivity extends AppCompatActivity {
 
                 try {
 
+                    SQLite del = new SQLite(getApplicationContext());
+                    del.open();
+                    del.deleteNotificationRows();
+                    del.close();
+
                     JSONArray tasks = new JSONArray(jsonStr);
 
                     for (int i = 0; i < tasks.length(); i++) {
@@ -748,20 +775,15 @@ public class MainActivity extends AppCompatActivity {
                         String toId = c.getString("ToId");
                         String isNew = c.getString("IsNew");
 
-                        // adding each child node to HashMap key => value
-                        HashMap<String, Object> taskMap = new HashMap<String, Object>();
-                        taskMap.put("TaskId", id);
-                        taskMap.put("UserName", username);
-                        taskMap.put("TaskName", taskName);
-                        taskMap.put("Description", description);
-                        taskMap.put("ById", byId);
-                        taskMap.put("ToId", toId);
-                        taskMap.put("IsNew", isNew);
-                        notiList.add(taskMap);
-
+                        String read = "No";
+                        String intentData = "Test";
+                        SQLite entry = new SQLite(getApplicationContext());
+                        entry.open();
+                        entry.createEntryNotification(description, read, intentData);
+                        String not_count = entry.getCountNotification();
+                        Log.d("NotCountFcm :", not_count);
+                        entry.close();
                     }
-
-                    count = notiList.size();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -776,11 +798,84 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
-            if (pDialogN.isShowing())
-                pDialogN.dismiss();
+//            if (pDialog.isShowing())
+//                pDialog.dismiss();
+
+            new GetNotiListLocal().execute();
+
+        }
+    }
+
+    private class GetNotiListLocal extends AsyncTask<Void, Void, Void> {
+
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//
+//            // Showing progress dialog
+//            pDialog = new ProgressDialog(MainActivity.this);
+//            pDialog.setMessage(getString(R.string.pDialog_wait));
+//            pDialog.setCancelable(true);
+//            pDialog.show();
+//        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            SQLite notC = new SQLite(MainActivity.this);
+            notC.open();
+            int countNot = Integer.parseInt(notC.getCountNotification());
+            notC.close();
+            Log.d("Service Count Not", String.valueOf(countNot));
+
+            if (countNot != 0) {
+                int i = 0;
+                int counter;
+                if (countNot < 5) {
+                    counter = countNot;
+                } else {
+                    counter = 5;
+                }
+                while (i < counter) {
+
+                    SQLite getNot = new SQLite(MainActivity.this);
+                    getNot.open();
+                    String notData[][] = getNot.getNotification();
+                    db_rowId = notData[i][0];
+                    db_desc = notData[i][1];
+                    db_read = notData[i][2];
+                    db_intent = notData[i][3];
+                    getNot.close();
+                    Log.d("Test DEsc", db_desc + db_intent + db_read);
+
+                    HashMap<String, Object> taskMap = new HashMap<String, Object>();
+                    taskMap.put("RowId", db_rowId);
+                    taskMap.put("Description", db_desc);
+                    taskMap.put("Read", db_read);
+                    taskMap.put("Intent", db_intent);
+                    notiList.add(taskMap);
+                    i++;
+
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+//            if (pDialog.isShowing())
+//                pDialog.dismiss();
 
             // initialize pop up window
-            CustomAdapterNot notAdapter = new CustomAdapterNot(MainActivity.this, R.layout.popup_layout, notiList);
+            for(int i=0;i<notiList.size();i++){
+                if(notiList.get(i).get("Read").equals("No")){
+                    count++;
+                }
+            }
+//            count = notiList.size();
+            CustomAdapterNot notAdapter = new CustomAdapterNot(MainActivity.this, R.layout.notification_layout, notiList);
             hidden_not.setAdapter(notAdapter);
             menuItem.setIcon(buildCounterDrawable(count, R.drawable.blue_bell_small));
 
