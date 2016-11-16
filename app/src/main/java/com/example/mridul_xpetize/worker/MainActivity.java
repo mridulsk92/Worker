@@ -765,6 +765,7 @@ public class MainActivity extends AppCompatActivity {
                     JSONArray tasks = new JSONArray(jsonStr);
 
                     for (int i = 0; i < tasks.length(); i++) {
+
                         JSONObject c = tasks.getJSONObject(i);
 
                         String id = c.getString("TaskId");
@@ -783,6 +784,7 @@ public class MainActivity extends AppCompatActivity {
                         String not_count = entry.getCountNotification();
                         Log.d("NotCountFcm :", not_count);
                         entry.close();
+
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();

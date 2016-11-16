@@ -729,7 +729,6 @@ public class TaskActivity extends AppCompatActivity {
                         } else {
                             response_json = 201;
                         }
-
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
