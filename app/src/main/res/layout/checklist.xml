@@ -25,4 +25,39 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView_holder"
+        android:layout_marginBottom="5dp"
+        android:layout_alignBottom="@+id/checkBox_item"
+        android:layout_toLeftOf="@+id/imageButton_camera"
+        android:layout_toStartOf="@+id/imageButton_camera"
+        android:layout_marginRight="25dp"
+        android:layout_marginEnd="25dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Attach"
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp"
+        android:id="@+id/textView_attach"
+        android:layout_above="@+id/imageView_holder"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="View"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="5dp"
+        android:id="@+id/textView_view"
+        android:layout_alignTop="@+id/textView_attach"
+        android:layout_toLeftOf="@+id/textView_attach"
+        android:layout_toStartOf="@+id/textView_attach" />
+
 </RelativeLayout>

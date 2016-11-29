@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
@@ -33,12 +34,14 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -103,6 +106,8 @@ public class TaskActivity extends AppCompatActivity {
     LayoutInflater inflater;
 
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
+    private static final int CAMERA_CAPTURE_IMAGE_CHECKLIST_REQUEST_CODE = 101;
+
     public static final int MEDIA_TYPE_IMAGE = 1;
     // directory name to store captured images and videos
     private static final String IMAGE_DIRECTORY_NAME = "Worker";
@@ -134,6 +139,9 @@ public class TaskActivity extends AppCompatActivity {
     ProgressDialog pDialogN;
     String db_rowId, db_desc, db_read, db_intent;
     RelativeLayout main_layout;
+    Bitmap bitmapFinal;
+    ArrayList<Bitmap> bitmapHolder;
+    static int tempPos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -214,7 +222,6 @@ public class TaskActivity extends AppCompatActivity {
                                                 }
                                             }
                                         })
-
                                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int id) {
@@ -267,6 +274,7 @@ public class TaskActivity extends AppCompatActivity {
 
         //Initialise
         notiList = new ArrayList<>();
+        bitmapHolder = new ArrayList<Bitmap>(8);
         CardView task_details_card = (CardView) findViewById(R.id.subTask_details);
         task_details_card.setBackgroundColor(Color.TRANSPARENT);
         main_layout = (RelativeLayout) findViewById(R.id.mainLayoutTask);
@@ -461,8 +469,8 @@ public class TaskActivity extends AppCompatActivity {
 
         intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
-        // start the image capture Intent
         startActivityForResult(intent, CAMERA_CAPTURE_IMAGE_REQUEST_CODE);
+
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -498,10 +506,13 @@ public class TaskActivity extends AppCompatActivity {
             // images
             options.inSampleSize = 8;
 
-            final Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(),
+            bitmapFinal = BitmapFactory.decodeFile(fileUri.getPath(),
                     options);
 
-            imgPreview.setImageBitmap(bitmap);
+            Log.d("Test POs", String.valueOf(tempPos));
+            bitmapHolder.set(tempPos, bitmapFinal);
+
+//            imgPreview.setImageBitmap(bitmapFinal);
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
@@ -913,7 +924,7 @@ public class TaskActivity extends AppCompatActivity {
 
         public CustomAdapter(Context context, int textViewResourceId, ArrayList<HashMap<String, Object>> Strings) {
 
-            //let android do the initializing :)
+            //let android do the initializing
             super(context, textViewResourceId, Strings);
         }
 
@@ -921,6 +932,8 @@ public class TaskActivity extends AppCompatActivity {
         private class ViewHolder {
 
             CheckBox checkBox;
+            TextView attach, viewImg;
+            ImageView imgHolder;
         }
 
         //Initialise
@@ -936,7 +949,10 @@ public class TaskActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
 
                 //cache the views
+                viewHolder.viewImg = (TextView) convertView.findViewById(R.id.textView_view);
                 viewHolder.checkBox = (CheckBox) convertView.findViewById(R.id.checkBox_item);
+                viewHolder.imgHolder = (ImageView) convertView.findViewById(R.id.imageView_holder);
+                viewHolder.attach = (TextView) convertView.findViewById(R.id.textView_attach);
 
                 //link the cached views to the convertview
                 convertView.setTag(viewHolder);
@@ -945,8 +961,75 @@ public class TaskActivity extends AppCompatActivity {
 
             //set the data to be displayed
             viewHolder.checkBox.setText(checkListData.get(position).get("ItemListString").toString());
+            viewHolder.attach.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    captureImage();
+                    tempPos = position;
+                }
+            });
+
+            viewHolder.viewImg.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //Click Event of view here
+                    ShowImagePopup(position);
+
+                }
+            });
             return convertView;
         }
+    }
+
+    private void ShowImagePopup(int pos) {
+
+        // Get screen size
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int screenWidth = size.x;
+        int screenHeight = size.y;
+
+        // Get target image size
+        Bitmap bitmap = bitmapHolder.get(pos);
+        int bitmapHeight = bitmap.getHeight();
+        int bitmapWidth = bitmap.getWidth();
+
+        // Scale the image down to fit perfectly into the screen
+        // The value (250 in this case) must be adjusted for phone/tables displays
+        while(bitmapHeight > (screenHeight - 250) || bitmapWidth > (screenWidth - 250)) {
+            bitmapHeight = bitmapHeight / 2;
+            bitmapWidth = bitmapWidth / 2;
+        }
+
+        // Create resized bitmap image
+        BitmapDrawable resizedDialogImage = new BitmapDrawable(TaskActivity.this.getResources(), Bitmap.createScaledBitmap(bitmap, bitmapWidth, bitmapHeight, false));
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setPositiveButton("Get Pro", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        }).setNegativeButton("No thanks", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+        AlertDialog dialog = builder.create();
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogLayout = inflater.inflate(R.layout.attachment_dialog, null);
+        dialog.setView(dialogLayout);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        // Without this line there is a very small border around the image (1px)
+        dialog.getWindow().setBackgroundDrawable(null);
+
+        ImageView image = (ImageView) dialog.findViewById(R.id.attachment_image);
+        image.setBackground(resizedDialogImage);
+        dialog.show();
+
     }
 
     private class GetCheckList extends AsyncTask<Void, Void, Void> {
@@ -1233,7 +1316,6 @@ public class TaskActivity extends AppCompatActivity {
 
                         //Get Data from Json
                         JSONObject jsonObject = new JSONObject(response);
-
                         String message = jsonObject.getString("NewNotificationResult");
 
                         //Save userid and username if success

@@ -265,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }
                                         })
-
                                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int id) {
@@ -359,7 +358,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... params) {
-
 
             String token = pref.GetPreferences("FCM TOKEN");
             String userid = pref.GetPreferences("UserId");

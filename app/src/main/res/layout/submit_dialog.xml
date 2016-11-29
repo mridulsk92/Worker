@@ -11,11 +11,9 @@
         android:padding="7dp"
         android:hint="@string/CommentBox"
         android:gravity="top"
-        android:layout_margin="5dp"
         android:background="@drawable/edittext_modified"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_below="@+id/textView4"
+        android:layout_centerHorizontal="true" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
@@ -25,4 +23,15 @@
         android:id="@+id/button_submit"
         android:layout_below="@+id/subimt_comment_text"
         android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Comments"
+        android:layout_margin="5dp"
+        android:id="@+id/textView4"
+        android:layout_alignParentTop="true"
+        android:layout_alignLeft="@+id/subimt_comment_text"
+        android:layout_alignStart="@+id/subimt_comment_text" />
 </RelativeLayout>
